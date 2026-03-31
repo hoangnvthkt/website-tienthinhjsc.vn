@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiến Thịnh JSC — Công ty CP Phát triển Đầu tư và Xây lắp Tiến Thịnh</title>
+  <meta name="description" content="Tiến Thịnh JSC — Chuyên thi công kết cấu thép, nhà xưởng, nhà công nghiệp, cầu thép và các công trình xây dựng dân dụng & công nghiệp từ năm 2005." />
+  <meta property="og:title" content="Tiến Thịnh JSC — Kết cấu thép & Xây lắp công nghiệp" />
+  <meta property="og:description" content="Chuyên thi công kết cấu thép, nhà xưởng, nhà công nghiệp, cầu thép và các công trình xây dựng dân dụng & công nghiệp." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header" id="header">
+      <div class="header__inner">
+        <!-- Mobile menu button (hidden on desktop) -->
+        <button class="header__menu-btn" id="menuToggle" aria-label="Menu">
+          <span class="header__menu-icon">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+
+        <!-- Left Navigation -->
+        <nav class="header__nav header__nav--left" id="headerNavLeft">
+          <ul class="header__nav-list">
+            <li class="header__nav-item">
+              <a href="#" data-page="home" class="header__nav-link">TRANG CHỦ</a>
+            </li>
+            <li class="header__nav-item header__nav-item--has-sub">
+              <a href="#" class="header__nav-link">GIỚI THIỆU <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <ul class="header__submenu">
+                <li><a href="#" data-page="about-letter" class="header__sub-link">THƯ NGỎ</a></li>
+                <li><a href="#" data-page="about-vision" class="header__sub-link">TẦM NHÌN SỨ MỆNH</a></li>
+                <li><a href="#" data-page="about-values" class="header__sub-link">GIÁ TRỊ CỐT LÕI</a></li>
+                <li><a href="#" data-page="history" class="header__sub-link">LỊCH SỬ</a></li>
+                <li><a href="#" data-page="about-org" class="header__sub-link">SƠ ĐỒ TỔ CHỨC</a></li>
+                <li><a href="#" data-page="about-cert" class="header__sub-link">CHỨNG CHỈ</a></li>
+                <li><a href="#" data-page="about-awards" class="header__sub-link">GIẢI THƯỞNG</a></li>
+              </ul>
+            </li>
+            <li class="header__nav-item header__nav-item--has-sub">
+              <a href="#" class="header__nav-link">NĂNG LỰC <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <ul class="header__submenu">
+                <li><a href="#" data-page="cap-hr" class="header__sub-link">NĂNG LỰC NHÂN SỰ</a></li>
+                <li><a href="#" data-page="cap-prod" class="header__sub-link">NĂNG LỰC SẢN XUẤT</a></li>
+                <li><a href="#" data-page="cap-construct" class="header__sub-link">NĂNG LỰC THI CÔNG</a></li>
+                <li><a href="#" data-page="cap-factory" class="header__sub-link">NĂNG LỰC NHÀ MÁY THIẾT BỊ</a></li>
+                <li><a href="#" data-page="cap-safety" class="header__sub-link">QUẢN LÝ AN TOÀN LAO ĐỘNG</a></li>
+              </ul>
+            </li>
+            <li class="header__nav-item header__nav-item--has-sub">
+              <a href="#" class="header__nav-link">DỊCH VỤ <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <ul class="header__submenu">
+                <li><a href="#" data-page="svc-general" class="header__sub-link">TỔNG THẦU XÂY DỰNG</a></li>
+                <li><a href="#" data-page="svc-fdi" class="header__sub-link">TƯ VẤN ĐẦU TƯ DỰ ÁN FDI</a></li>
+                <li><a href="#" data-page="svc-steel" class="header__sub-link">SẢN XUẤT KẾT CẤU THÉP</a></li>
+                <li><a href="#" data-page="svc-design" class="header__sub-link">TƯ VẤN THIẾT KẾ</a></li>
+                <li><a href="#" data-page="svc-trade" class="header__sub-link">KINH DOANH THƯƠNG MẠI</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Center Logo -->
+        <a href="#" class="header__logo" id="logoLink" data-page="home">
+          <img src="/images/logo.png" alt="Tiến Thịnh JSC" class="logo-img" />
+        </a>
+
+        <!-- Right Navigation -->
+        <nav class="header__nav header__nav--right" id="headerNavRight">
+          <ul class="header__nav-list">
+            <li class="header__nav-item header__nav-item--has-sub">
+              <a href="#" class="header__nav-link">DỰ ÁN <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <ul class="header__submenu">
+                <li><a href="#" data-page="proj-done" class="header__sub-link">DỰ ÁN ĐÃ TRIỂN KHAI</a></li>
+                <li><a href="#" data-page="proj-ongoing" class="header__sub-link">DỰ ÁN ĐANG TRIỂN KHAI</a></li>
+                <li><a href="#" data-page="exhibitions" class="header__sub-link">DỰ ÁN TIÊU BIỂU</a></li>
+                <li><a href="#" data-page="proj-country" class="header__sub-link">THEO QUỐC GIA</a></li>
+                <li><a href="#" data-page="proj-field" class="header__sub-link">THEO LĨNH VỰC</a></li>
+              </ul>
+            </li>
+            <li class="header__nav-item header__nav-item--has-sub">
+              <a href="#" class="header__nav-link">TIN TỨC <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <ul class="header__submenu">
+                <li><a href="#" data-page="news" class="header__sub-link">TIN CÔNG TY</a></li>
+                <li><a href="#" data-page="news-site" class="header__sub-link">TIN CÔNG TRƯỜNG</a></li>
+                <li><a href="#" data-page="news-recruit" class="header__sub-link">TIN TUYỂN DỤNG</a></li>
+                <li><a href="#" data-page="news-knowledge" class="header__sub-link">KIẾN THỨC CHUYÊN MÔN</a></li>
+              </ul>
+            </li>
+            <li class="header__nav-item">
+              <a href="#" data-page="contact" class="header__nav-link">LIÊN HỆ</a>
+            </li>
+            <li class="header__nav-item">
+              <a href="#" data-page="documents" class="header__nav-link">TÀI LIỆU</a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Search button -->
+        <button class="header__search-btn" id="searchToggle" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Full-screen Nav Menu -->
+    <nav class="nav-overlay" id="navOverlay">
+      <div class="nav-overlay__content">
+        <ul class="nav-overlay__links">
+          <li><a href="#" data-page="home" class="nav-link">Trang chủ</a></li>
+          <li class="nav-overlay__group">
+            <span class="nav-overlay__group-title">Giới thiệu</span>
+            <ul class="nav-overlay__sub">
+              <li><a href="#" data-page="about-letter" class="nav-link">Thư ngỏ</a></li>
+              <li><a href="#" data-page="about-vision" class="nav-link">Tầm nhìn sứ mệnh</a></li>
+              <li><a href="#" data-page="about-values" class="nav-link">Giá trị cốt lõi</a></li>
+              <li><a href="#" data-page="history" class="nav-link">Lịch sử</a></li>
+              <li><a href="#" data-page="about-org" class="nav-link">Sơ đồ tổ chức</a></li>
+              <li><a href="#" data-page="about-cert" class="nav-link">Chứng chỉ</a></li>
+              <li><a href="#" data-page="about-awards" class="nav-link">Giải thưởng</a></li>
+            </ul>
+          </li>
+          <li class="nav-overlay__group">
+            <span class="nav-overlay__group-title">Năng lực</span>
+            <ul class="nav-overlay__sub">
+              <li><a href="#" data-page="cap-hr" class="nav-link">Năng lực nhân sự</a></li>
+              <li><a href="#" data-page="cap-prod" class="nav-link">Năng lực sản xuất</a></li>
+              <li><a href="#" data-page="cap-construct" class="nav-link">Năng lực thi công</a></li>
+              <li><a href="#" data-page="cap-factory" class="nav-link">Năng lực nhà máy thiết bị</a></li>
+              <li><a href="#" data-page="cap-safety" class="nav-link">Quản lý an toàn lao động</a></li>
+            </ul>
+          </li>
+          <li class="nav-overlay__group">
+            <span class="nav-overlay__group-title">Dịch vụ</span>
+            <ul class="nav-overlay__sub">
+              <li><a href="#" data-page="svc-general" class="nav-link">Tổng thầu xây dựng</a></li>
+              <li><a href="#" data-page="svc-fdi" class="nav-link">Tư vấn đầu tư dự án FDI</a></li>
+              <li><a href="#" data-page="svc-steel" class="nav-link">Sản xuất kết cấu thép</a></li>
+              <li><a href="#" data-page="svc-design" class="nav-link">Tư vấn thiết kế</a></li>
+              <li><a href="#" data-page="svc-trade" class="nav-link">Kinh doanh thương mại</a></li>
+            </ul>
+          </li>
+          <li class="nav-overlay__group">
+            <span class="nav-overlay__group-title">Dự án</span>
+            <ul class="nav-overlay__sub">
+              <li><a href="#" data-page="proj-done" class="nav-link">Dự án đã triển khai</a></li>
+              <li><a href="#" data-page="proj-ongoing" class="nav-link">Dự án đang triển khai</a></li>
+              <li><a href="#" data-page="exhibitions" class="nav-link">Dự án tiêu biểu</a></li>
+              <li><a href="#" data-page="proj-country" class="nav-link">Theo quốc gia</a></li>
+              <li><a href="#" data-page="proj-field" class="nav-link">Theo lĩnh vực</a></li>
+            </ul>
+          </li>
+          <li class="nav-overlay__group">
+            <span class="nav-overlay__group-title">Tin tức</span>
+            <ul class="nav-overlay__sub">
+              <li><a href="#" data-page="news" class="nav-link">Tin công ty</a></li>
+              <li><a href="#" data-page="news-site" class="nav-link">Tin công trường</a></li>
+              <li><a href="#" data-page="news-recruit" class="nav-link">Tin tuyển dụng</a></li>
+              <li><a href="#" data-page="news-knowledge" class="nav-link">Kiến thức chuyên môn</a></li>
+            </ul>
+          </li>
+          <li><a href="#" data-page="contact" class="nav-link">Liên hệ</a></li>
+          <li><a href="#" data-page="documents" class="nav-link">Tài liệu</a></li>
+        </ul>
+        <div class="nav-overlay__footer">
+          <div class="nav-overlay__lang">
+            <a href="#" class="active">Tiếng Việt</a>
+            <a href="#">English</a>
+          </div>
+          <div class="nav-overlay__newsletter">
+            <button id="newsletterBtn">Đăng ký nhận tin</button>
+          </div>
+          <div class="nav-overlay__legal">
+            <a href="#">Chính sách bảo mật</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+      <div class="search-overlay__inner">
+        <input type="text" class="search-overlay__input" placeholder="Tìm kiếm công trình, dự án..." id="searchInput" />
+        <button class="search-overlay__close" id="searchClose">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Page: Home -->
+    <main class="page page--home active" id="page-home">
+      <!-- Space View -->
+      <div class="space-view active" id="spaceView"></div>
+      <!-- Grid View -->
+      <div class="grid-view" id="gridView"></div>
+      <!-- View Toggle -->
+      <div class="view-toggle" id="viewToggle">
+        <button class="view-toggle__btn active" id="btnSpace" data-view="space">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          <span>KHÔNG GIAN</span>
+        </button>
+        <button class="view-toggle__btn" id="btnGrid" data-view="grid">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span>LƯỚI</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Page: Product Detail -->
+    <main class="page page--product" id="page-product">
+      <button class="back-btn" id="backBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="product-detail">
+        <div class="product-detail__gallery" id="productGallery">
+          <div class="product-detail__slider" id="productSlider"></div>
+          <div class="product-detail__nav">
+            <button class="slider-prev" id="sliderPrev">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="slider-count" id="sliderCount">1 / 3</span>
+            <button class="slider-next" id="sliderNext">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="product-detail__info" id="productInfo">
+          <div class="product-detail__header-bar">
+            <div class="header__inner">
+              <button class="header__menu-btn" id="menuToggle2" aria-label="Menu">
+                <span class="header__menu-icon"><span></span><span></span></span>
+              </button>
+              <a href="#" class="header__logo" data-page="home">
+                <img src="/images/logo.png" alt="Tiến Thịnh JSC" class="logo-img" />
+              </a>
+              <button class="header__search-btn" aria-label="Search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <h1 class="product-detail__title" id="productTitle"></h1>
+          <p class="product-detail__subtitle" id="productSubtitle"></p>
+          <div class="product-detail__meta">
+            <span id="productAuthor"></span>
+            <span id="productYear"></span>
+          </div>
+          <div class="product-detail__variants" id="productVariants"></div>
+          <div class="product-detail__desc" id="productDesc"></div>
+          <div class="product-detail__accordions" id="productAccordions">
+            <div class="accordion" data-section="history">
+              <button class="accordion__header">
+                <span>LỊCH SỬ</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              </button>
+              <div class="accordion__body"><p>Thông tin lịch sử công trình sẽ được cập nhật.</p></div>
+            </div>
+            <div class="accordion" data-section="specs">
+              <button class="accordion__header">
+                <span>THÔNG SỐ KỸ THUẬT</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              </button>
+              <div class="accordion__body"><p>Thông số kỹ thuật sẽ được cập nhật.</p></div>
+            </div>
+            <div class="accordion" data-section="scope">
+              <button class="accordion__header">
+                <span>PHẠM VI CÔNG VIỆC</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              </button>
+              <div class="accordion__body"><p>Phạm vi công việc sẽ được cập nhật.</p></div>
+            </div>
+            <div class="accordion" data-section="gallery">
+              <button class="accordion__header">
+                <span>HÌNH ẢNH THÊM</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              </button>
+              <div class="accordion__body"><p>Hình ảnh bổ sung sẽ được cập nhật.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: History -->
+    <main class="page page--history" id="page-history">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Lịch Sử</h1>
+          <p class="content-page__intro">Hành trình hơn 20 năm xây dựng và phát triển của Tiến Thịnh JSC — từ một doanh nghiệp nhỏ đến thương hiệu hàng đầu trong lĩnh vực kết cấu thép và xây lắp công nghiệp.</p>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="timeline__item">
+            <div class="timeline__year">2005</div>
+            <div class="timeline__content">
+              <h3>Thành lập công ty</h3>
+              <p>Công ty Cổ phần Phát triển Đầu tư và Xây lắp Tiến Thịnh được thành lập tại Hà Nội, chuyên thi công kết cấu thép nhà xưởng công nghiệp với đội ngũ 15 kỹ sư và công nhân lành nghề.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2008</div>
+            <div class="timeline__content">
+              <h3>Mở rộng quy mô</h3>
+              <p>Đầu tư xưởng sản xuất kết cấu thép 5.000m² tại KCN Từ Liêm, nâng công suất lên 500 tấn/tháng. Hoàn thành dự án nhà máy Samsung Electronics Bắc Ninh.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2012</div>
+            <div class="timeline__content">
+              <h3>Đạt chứng nhận ISO 9001:2008</h3>
+              <p>Tiêu chuẩn hóa quy trình sản xuất và thi công. Trở thành nhà thầu phụ uy tín cho các tổng thầu Nhật Bản, Hàn Quốc tại Việt Nam.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2015</div>
+            <div class="timeline__content">
+              <h3>Bước ngoặt phát triển</h3>
+              <p>Nâng cấp xưởng sản xuất lên 12.000m², công suất 1.500 tấn/tháng. Thực hiện thành công dự án cầu thép vượt sông dài 200m và nhà máy điện mặt trời 50MW.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2018</div>
+            <div class="timeline__content">
+              <h3>Vươn tầm khu vực</h3>
+              <p>Mở rộng sang thị trường Lào và Campuchia. Hoàn thành hơn 200 dự án lớn nhỏ, tổng khối lượng kết cấu thép vượt 50.000 tấn.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2021</div>
+            <div class="timeline__content">
+              <h3>Chuyển đổi số</h3>
+              <p>Áp dụng BIM trong thiết kế và quản lý dự án. Đầu tư dây chuyền tự động hóa cắt, khoan CNC nhập khẩu từ Đức, nâng cao độ chính xác và năng suất.</p>
+            </div>
+          </div>
+          <div class="timeline__item">
+            <div class="timeline__year">2024</div>
+            <div class="timeline__content">
+              <h3>Khẳng định vị thế</h3>
+              <p>Đội ngũ 350+ nhân sự, xưởng sản xuất 20.000m², công suất 3.000 tấn/tháng. Đối tác chiến lược của các tập đoàn FDI hàng đầu tại Việt Nam.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Authors (Đội ngũ) -->
+    <main class="page page--authors" id="page-cap-hr">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Năng Lực Nhân Sự</h1>
+          <p class="content-page__intro">Đội ngũ kỹ sư và chuyên gia giàu kinh nghiệm — nền tảng vững chắc cho mọi công trình của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="authors-grid" id="authorsGrid">
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #1a1a2e, #16213e)">
+              <span class="author-card__initials">NT</span>
+            </div>
+            <h3 class="author-card__name">Nguyễn Văn Thịnh</h3>
+            <p class="author-card__role">Tổng Giám đốc</p>
+            <p class="author-card__bio">25 năm kinh nghiệm trong lĩnh vực xây dựng và kết cấu thép. Thạc sĩ Xây dựng — ĐH Bách Khoa Hà Nội.</p>
+          </div>
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #0f3460, #533483)">
+              <span class="author-card__initials">TH</span>
+            </div>
+            <h3 class="author-card__name">Trần Đức Hùng</h3>
+            <p class="author-card__role">Giám đốc Kỹ thuật</p>
+            <p class="author-card__bio">20 năm kinh nghiệm thiết kế kết cấu thép. Chuyên gia BIM. Tiến sĩ Kỹ thuật Công trình — ĐH Xây dựng.</p>
+          </div>
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #1a1a2e, #e94560)">
+              <span class="author-card__initials">LM</span>
+            </div>
+            <h3 class="author-card__name">Lê Minh Đức</h3>
+            <p class="author-card__role">Giám đốc Dự án</p>
+            <p class="author-card__bio">15 năm quản lý các dự án lớn. Chuyên gia PMI-PMP. Cử nhân Quản lý Xây dựng — ĐH GTVT.</p>
+          </div>
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #2d4059, #ea5455)">
+              <span class="author-card__initials">PL</span>
+            </div>
+            <h3 class="author-card__name">Phạm Thu Lan</h3>
+            <p class="author-card__role">Trưởng phòng Thiết kế</p>
+            <p class="author-card__bio">12 năm kinh nghiệm thiết kế chi tiết kết cấu thép. Thành thạo Tekla Structures, AutoCAD.</p>
+          </div>
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #222831, #30475e)">
+              <span class="author-card__initials">VT</span>
+            </div>
+            <h3 class="author-card__name">Vũ Quốc Tuấn</h3>
+            <p class="author-card__role">Trưởng phòng Sản xuất</p>
+            <p class="author-card__bio">18 năm kinh nghiệm sản xuất kết cấu thép. Chuyên gia hàn AWS-CWI. Quản lý xưởng 20.000m².</p>
+          </div>
+          <div class="author-card">
+            <div class="author-card__img" style="background: linear-gradient(135deg, #2c3e50, #3498db)">
+              <span class="author-card__initials">HN</span>
+            </div>
+            <h3 class="author-card__name">Hoàng Thanh Nga</h3>
+            <p class="author-card__role">Giám đốc Tài chính</p>
+            <p class="author-card__bio">15 năm kinh nghiệm quản lý tài chính doanh nghiệp xây dựng. Thạc sĩ Tài chính — ĐH Kinh tế Quốc dân.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Exhibitions (Dự án tiêu biểu) -->
+    <main class="page page--exhibitions" id="page-exhibitions">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Dự Án Tiêu Biểu</h1>
+          <p class="content-page__intro">Những công trình đáng tự hào — minh chứng cho năng lực và uy tín của Tiến Thịnh JSC trong suốt hành trình phát triển.</p>
+        </div>
+        <div class="exhibitions-grid" id="exhibitionsGrid">
+          <div class="exhibition-card">
+            <div class="exhibition-card__img">
+              <img src="/images/steel-warehouse.png" alt="Nhà máy Samsung" loading="lazy" />
+            </div>
+            <div class="exhibition-card__info">
+              <span class="exhibition-card__date">2023</span>
+              <h3 class="exhibition-card__title">Nhà máy Samsung Display — Bắc Ninh</h3>
+              <p class="exhibition-card__desc">Thi công kết cấu thép nhà xưởng 25.000m², khối lượng 3.500 tấn thép. Hoàn thành đúng tiến độ 6 tháng.</p>
+            </div>
+          </div>
+          <div class="exhibition-card">
+            <div class="exhibition-card__img">
+              <img src="/images/steel-bridge.png" alt="Cầu vượt thép" loading="lazy" />
+            </div>
+            <div class="exhibition-card__info">
+              <span class="exhibition-card__date">2022</span>
+              <h3 class="exhibition-card__title">Cầu vượt thép — Quốc lộ 1A</h3>
+              <p class="exhibition-card__desc">Cầu thép dài 180m, tải trọng HL-93. Thiết kế và thi công trọn gói theo tiêu chuẩn TCVN.</p>
+            </div>
+          </div>
+          <div class="exhibition-card">
+            <div class="exhibition-card__img">
+              <img src="/images/solar-steel-frame.png" alt="Điện mặt trời" loading="lazy" />
+            </div>
+            <div class="exhibition-card__info">
+              <span class="exhibition-card__date">2021</span>
+              <h3 class="exhibition-card__title">Nhà máy Điện mặt trời — Ninh Thuận</h3>
+              <p class="exhibition-card__desc">Cung cấp và lắp đặt khung kết cấu thép cho hệ thống pin năng lượng mặt trời 50MW trên diện tích 60ha.</p>
+            </div>
+          </div>
+          <div class="exhibition-card">
+            <div class="exhibition-card__img">
+              <img src="/images/high-rise-steel.png" alt="Cao ốc văn phòng" loading="lazy" />
+            </div>
+            <div class="exhibition-card__info">
+              <span class="exhibition-card__date">2020</span>
+              <h3 class="exhibition-card__title">Tòa nhà văn phòng 25 tầng — Hà Nội</h3>
+              <p class="exhibition-card__desc">Kết cấu thép composite, khối lượng 4.200 tấn. Đạt giải thưởng Công trình chất lượng cao 2020.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: News -->
+    <main class="page page--news" id="page-news">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tin Tức</h1>
+          <p class="content-page__intro">Cập nhật thông tin mới nhất về hoạt động, dự án và các sự kiện của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="news-grid" id="newsGrid">
+          <article class="news-card">
+            <div class="news-card__img">
+              <img src="/images/factory-interior.png" alt="Mở rộng xưởng" loading="lazy" />
+            </div>
+            <div class="news-card__content">
+              <span class="news-card__date">15/03/2024</span>
+              <h3 class="news-card__title">Khánh thành xưởng sản xuất mới 20.000m²</h3>
+              <p class="news-card__excerpt">Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức...</p>
+            </div>
+          </article>
+          <article class="news-card">
+            <div class="news-card__img">
+              <img src="/images/construction-team.png" alt="Đội ngũ" loading="lazy" />
+            </div>
+            <div class="news-card__content">
+              <span class="news-card__date">28/01/2024</span>
+              <h3 class="news-card__title">Tuyển dụng 50 kỹ sư và thợ hàn lành nghề</h3>
+              <p class="news-card__excerpt">Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế...</p>
+            </div>
+          </article>
+          <article class="news-card">
+            <div class="news-card__img">
+              <img src="/images/steel-roof-structure.png" alt="Dự án mới" loading="lazy" />
+            </div>
+            <div class="news-card__content">
+              <span class="news-card__date">10/12/2023</span>
+              <h3 class="news-card__title">Ký hợp đồng dự án nhà máy LG Display — Hải Phòng</h3>
+              <p class="news-card__excerpt">Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép...</p>
+            </div>
+          </article>
+          <article class="news-card">
+            <div class="news-card__img">
+              <img src="/images/steel-structure-detail.png" alt="Chứng nhận" loading="lazy" />
+            </div>
+            <div class="news-card__content">
+              <span class="news-card__date">05/09/2023</span>
+              <h3 class="news-card__title">Đạt chứng nhận ISO 14001:2015 về Môi trường</h3>
+              <p class="news-card__excerpt">Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững...</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Contact -->
+    <main class="page page--contact" id="page-contact">
+      <div class="content-page">
+        <div class="contact-layout">
+          <div class="contact-form-area">
+            <h1 class="content-page__title">Liên Hệ</h1>
+            <p class="content-page__intro">Hãy liên hệ với chúng tôi để được tư vấn giải pháp kết cấu thép và xây lắp tốt nhất cho dự án của bạn.</p>
+            <form class="contact-form" id="contactForm">
+              <div class="form-group">
+                <label for="contactName">Họ và tên *</label>
+                <input type="text" id="contactName" name="name" required />
+              </div>
+              <div class="form-group">
+                <label for="contactEmail">Email *</label>
+                <input type="email" id="contactEmail" name="email" required />
+              </div>
+              <div class="form-group">
+                <label for="contactPhone">Số điện thoại</label>
+                <input type="tel" id="contactPhone" name="phone" />
+              </div>
+              <div class="form-group">
+                <label for="contactSubject">Chủ đề</label>
+                <select id="contactSubject" name="subject">
+                  <option value="">Chọn chủ đề</option>
+                  <option value="quote">Báo giá dự án</option>
+                  <option value="partnership">Hợp tác kinh doanh</option>
+                  <option value="career">Tuyển dụng</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="contactMessage">Nội dung *</label>
+                <textarea id="contactMessage" name="message" rows="5" required></textarea>
+              </div>
+              <button type="submit" class="contact-form__submit">Gửi liên hệ</button>
+            </form>
+          </div>
+          <div class="contact-info-area">
+            <div class="contact-info__block">
+              <h3>Trụ sở chính</h3>
+              <p>Công ty CP Phát triển Đầu tư và Xây lắp Tiến Thịnh</p>
+              <p>Số 88, Đường Láng, Quận Đống Đa<br/>Hà Nội, Việt Nam</p>
+            </div>
+            <div class="contact-info__block">
+              <h3>Xưởng sản xuất</h3>
+              <p>Lô C5, KCN Đông Anh<br/>Hà Nội, Việt Nam</p>
+            </div>
+            <div class="contact-info__block">
+              <h3>Liên hệ trực tiếp</h3>
+              <p>
+                <strong>Tel:</strong> +84 24 3856 7890<br/>
+                <strong>Fax:</strong> +84 24 3856 7891<br/>
+                <strong>Email:</strong> info@tienthinhjsc.vn
+              </p>
+            </div>
+            <div class="contact-info__block">
+              <h3>Mạng xã hội</h3>
+              <div class="contact-socials">
+                <a href="#" aria-label="Facebook">Facebook</a>
+                <a href="#" aria-label="LinkedIn">LinkedIn</a>
+                <a href="#" aria-label="YouTube">YouTube</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Google Maps Section -->
+        <div class="contact-map reveal" id="contactMap">
+          <h3 class="contact-map__label">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Vị trí trên bản đồ
+          </h3>
+          <div class="contact-map__wrapper">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.096994063796!2d105.80789631493245!3d21.02878198600065!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab76c790c9e3%3A0x4b5b0e4b4b4b4b4b!2zODggxJDGsOG7nW5nIEzDoW5nLCBMw6FuZyBUaMaw4bujbmcsIMSQ4buRbmcgxJBhLCBIw6AgTuG7mWk!5e0!3m2!1svi!2svn!4v1700000000000!5m2!1svi!2svn"
+              width="100%"
+              height="400"
+              style="border:0;"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Bản đồ Tiến Thịnh JSC"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Thư Ngỏ -->
+    <main class="page page--subpage" id="page-about-letter">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Thư Ngỏ</h1>
+          <p class="content-page__intro">Thông điệp từ Ban Lãnh đạo Tiến Thịnh JSC gửi đến quý đối tác và khách hàng.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tầm Nhìn Sứ Mệnh -->
+    <main class="page page--subpage" id="page-about-vision">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tầm Nhìn & Sứ Mệnh</h1>
+          <p class="content-page__intro">Định hướng phát triển bền vững và sứ mệnh của Tiến Thịnh JSC trong ngành xây dựng.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Giá Trị Cốt Lõi -->
+    <main class="page page--subpage" id="page-about-values">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Giá Trị Cốt Lõi</h1>
+          <p class="content-page__intro">Những giá trị nền tảng định hình văn hóa và hoạt động của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Sơ Đồ Tổ Chức -->
+    <main class="page page--subpage" id="page-about-org">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Sơ Đồ Tổ Chức</h1>
+          <p class="content-page__intro">Cơ cấu tổ chức và bộ máy điều hành của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Chứng Chỉ -->
+    <main class="page page--subpage" id="page-about-cert">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Chứng Chỉ</h1>
+          <p class="content-page__intro">Các chứng chỉ năng lực, ISO và giấy phép hành nghề của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Giải Thưởng -->
+    <main class="page page--subpage" id="page-about-awards">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Giải Thưởng</h1>
+          <p class="content-page__intro">Những giải thưởng và danh hiệu ghi nhận thành tựu của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Năng Lực Sản Xuất -->
+    <main class="page page--subpage" id="page-cap-prod">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Năng Lực Sản Xuất</h1>
+          <p class="content-page__intro">Hệ thống nhà xưởng, dây chuyền sản xuất kết cấu thép hiện đại của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Năng Lực Thi Công -->
+    <main class="page page--subpage" id="page-cap-construct">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Năng Lực Thi Công</h1>
+          <p class="content-page__intro">Năng lực thi công lắp đặt kết cấu thép tại công trường của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Năng Lực Nhà Máy Thiết Bị -->
+    <main class="page page--subpage" id="page-cap-factory">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Năng Lực Nhà Máy & Thiết Bị</h1>
+          <p class="content-page__intro">Trang thiết bị, máy móc hiện đại phục vụ sản xuất và thi công.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Quản Lý An Toàn Lao Động -->
+    <main class="page page--subpage" id="page-cap-safety">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Quản Lý An Toàn Lao Động</h1>
+          <p class="content-page__intro">Chính sách và quy trình đảm bảo an toàn lao động tại Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tổng Thầu Xây Dựng -->
+    <main class="page page--subpage" id="page-svc-general">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tổng Thầu Xây Dựng</h1>
+          <p class="content-page__intro">Dịch vụ tổng thầu xây dựng công trình công nghiệp và dân dụng.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tư Vấn Đầu Tư Dự Án FDI -->
+    <main class="page page--subpage" id="page-svc-fdi">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tư Vấn Đầu Tư Dự Án FDI</h1>
+          <p class="content-page__intro">Hỗ trợ tư vấn toàn diện cho các dự án đầu tư trực tiếp nước ngoài.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Sản Xuất Kết Cấu Thép -->
+    <main class="page page--subpage" id="page-svc-steel">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Sản Xuất Kết Cấu Thép</h1>
+          <p class="content-page__intro">Dịch vụ gia công, chế tạo kết cấu thép chất lượng cao.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tư Vấn Thiết Kế -->
+    <main class="page page--subpage" id="page-svc-design">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tư Vấn Thiết Kế</h1>
+          <p class="content-page__intro">Dịch vụ tư vấn thiết kế kết cấu thép và kiến trúc công trình.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Kinh Doanh Thương Mại -->
+    <main class="page page--subpage" id="page-svc-trade">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Kinh Doanh Thương Mại</h1>
+          <p class="content-page__intro">Cung cấp vật tư, thiết bị xây dựng và kết cấu thép.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Dự Án Đã Triển Khai -->
+    <main class="page page--subpage" id="page-proj-done">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Dự Án Đã Triển Khai</h1>
+          <p class="content-page__intro">Danh sách các dự án đã hoàn thành thành công bởi Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Dự Án Đang Triển Khai -->
+    <main class="page page--subpage" id="page-proj-ongoing">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Dự Án Đang Triển Khai</h1>
+          <p class="content-page__intro">Các dự án đang được Tiến Thịnh JSC thi công và triển khai.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Theo Quốc Gia -->
+    <main class="page page--subpage" id="page-proj-country">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Dự Án Theo Quốc Gia</h1>
+          <p class="content-page__intro">Phân loại dự án theo quốc gia và khu vực triển khai.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Theo Lĩnh Vực -->
+    <main class="page page--subpage" id="page-proj-field">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Dự Án Theo Lĩnh Vực</h1>
+          <p class="content-page__intro">Phân loại dự án theo lĩnh vực: công nghiệp, dân dụng, hạ tầng, năng lượng.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tin Công Trường -->
+    <main class="page page--subpage" id="page-news-site">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tin Công Trường</h1>
+          <p class="content-page__intro">Cập nhật tiến độ và hoạt động tại các công trường của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tin Tuyển Dụng -->
+    <main class="page page--subpage" id="page-news-recruit">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tin Tuyển Dụng</h1>
+          <p class="content-page__intro">Cơ hội nghề nghiệp và tuyển dụng tại Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Kiến Thức Chuyên Môn -->
+    <main class="page page--subpage" id="page-news-knowledge">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Kiến Thức Chuyên Môn</h1>
+          <p class="content-page__intro">Chia sẻ kinh nghiệm, kiến thức chuyên ngành kết cấu thép và xây dựng.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Tài Liệu -->
+    <main class="page page--subpage" id="page-documents">
+      <div class="content-page">
+        <div class="content-page__hero">
+          <h1 class="content-page__title">Tài Liệu</h1>
+          <p class="content-page__intro">Catalogue, hồ sơ năng lực và tài liệu kỹ thuật của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="subpage-content">
+          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer" id="siteFooter">
+      <div class="footer__inner">
+        <div class="footer__top">
+          <div class="footer__brand">
+            <a href="#" class="footer__logo" data-page="home">
+              <img src="/images/logo.png" alt="Tiến Thịnh JSC" class="footer__logo-img" />
+            </a>
+            <p class="footer__tagline">Công ty CP Phát triển Đầu tư và Xây lắp Tiến Thịnh — Đối tác tin cậy trong lĩnh vực kết cấu thép và xây lắp công nghiệp.</p>
+          </div>
+          <div class="footer__links">
+            <div class="footer__col">
+              <h4 class="footer__heading">Điều hướng</h4>
+              <ul class="footer__list">
+                <li><a href="#" data-page="home">Trang chủ</a></li>
+                <li><a href="#" data-page="about-letter">Giới thiệu</a></li>
+                <li><a href="#" data-page="history">Lịch sử</a></li>
+                <li><a href="#" data-page="cap-hr">Năng lực</a></li>
+                <li><a href="#" data-page="exhibitions">Dự án</a></li>
+              </ul>
+            </div>
+            <div class="footer__col">
+              <h4 class="footer__heading">Thông tin</h4>
+              <ul class="footer__list">
+                <li><a href="#" data-page="news">Tin tức</a></li>
+                <li><a href="#" data-page="contact">Liên hệ</a></li>
+                <li><a href="#" data-page="documents">Tài liệu</a></li>
+              </ul>
+            </div>
+            <div class="footer__col">
+              <h4 class="footer__heading">Liên hệ</h4>
+              <ul class="footer__list footer__list--contact">
+                <li>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>Số 88, Đường Láng, Đống Đa, Hà Nội</span>
+                </li>
+                <li>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <span>+84 24 3856 7890</span>
+                </li>
+                <li>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span>info@tienthinhjsc.vn</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="footer__bottom">
+          <p class="footer__copyright">© 2024 Tiến Thịnh JSC. All rights reserved.</p>
+          <div class="footer__socials">
+            <a href="#" aria-label="Facebook">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953h-1.514c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="#" aria-label="LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <a href="#" aria-label="YouTube">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
