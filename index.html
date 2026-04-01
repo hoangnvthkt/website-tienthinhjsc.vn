@@ -109,6 +109,20 @@
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
         </button>
+
+        <!-- Theme toggle -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Chuyển chế độ sáng/tối">
+          <span class="theme-toggle__icon theme-toggle__icon--moon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </span>
+          <span class="theme-toggle__icon theme-toggle__icon--sun">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </span>
+        </button>
       </div>
     </header>
 
@@ -204,6 +218,28 @@
       <div class="space-view active" id="spaceView"></div>
       <!-- Grid View -->
       <div class="grid-view" id="gridView"></div>
+      <!-- Stats Counter Bar -->
+      <div class="stats-bar" id="statsBar">
+        <div class="stats-bar__item">
+          <span class="stats-bar__number" data-target="20" data-suffix="+">0</span>
+          <span class="stats-bar__label">Năm kinh nghiệm</span>
+        </div>
+        <div class="stats-bar__divider"></div>
+        <div class="stats-bar__item">
+          <span class="stats-bar__number" data-target="500" data-suffix="+">0</span>
+          <span class="stats-bar__label">Dự án hoàn thành</span>
+        </div>
+        <div class="stats-bar__divider"></div>
+        <div class="stats-bar__item">
+          <span class="stats-bar__number" data-target="50000" data-suffix="+">0</span>
+          <span class="stats-bar__label">Tấn thép</span>
+        </div>
+        <div class="stats-bar__divider"></div>
+        <div class="stats-bar__item">
+          <span class="stats-bar__number" data-target="1000" data-suffix="+">0</span>
+          <span class="stats-bar__label">Nhân sự</span>
+        </div>
+      </div>
       <!-- View Toggle -->
       <div class="view-toggle" id="viewToggle">
         <button class="view-toggle__btn active" id="btnSpace" data-view="space">
@@ -606,14 +642,29 @@
     </main>
 
     <!-- Page: Thư Ngỏ -->
-    <main class="page page--subpage" id="page-about-letter">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Thư Ngỏ</h1>
-          <p class="content-page__intro">Thông điệp từ Ban Lãnh đạo Tiến Thịnh JSC gửi đến quý đối tác và khách hàng.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-letter">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-warehouse.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Thư Ngỏ</h1>
+          <p class="page-hero__subtitle">Thông điệp từ Ban Lãnh đạo Tiến Thịnh JSC</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="page-content">
+        <div class="page-content__body">
+          <p class="page-content__greeting">Kính gửi Quý Đối tác, Quý Khách hàng,</p>
+          <p>Trải qua hơn <strong>20 năm</strong> hình thành và phát triển, Công ty Cổ phần Phát triển Đầu tư và Xây lắp Tiến Thịnh đã không ngừng nỗ lực vươn lên, khẳng định vị thế là một trong những đơn vị hàng đầu trong lĩnh vực <strong>sản xuất kết cấu thép và xây lắp công nghiệp</strong> tại Việt Nam.</p>
+          <blockquote class="page-content__quote">
+            "Chất lượng là nền tảng — Uy tín là giá trị — Đổi mới là động lực phát triển."
+          </blockquote>
+          <p>Với đội ngũ hơn <strong>350 kỹ sư và công nhân lành nghề</strong>, hệ thống nhà xưởng sản xuất <strong>20.000m²</strong> được trang bị dây chuyền CNC hiện đại, chúng tôi tự hào đã hoàn thành hơn <strong>500 dự án</strong> lớn nhỏ trên khắp Việt Nam và khu vực Đông Nam Á.</p>
+          <p>Tiến Thịnh JSC luôn lấy chất lượng công trình làm kim chỉ nam, lấy sự hài lòng của khách hàng làm thước đo thành công. Chúng tôi cam kết mang đến những giải pháp kết cấu thép tối ưu nhất — từ tư vấn thiết kế, gia công chế tạo đến lắp đặt hoàn thiện tại công trường.</p>
+          <p>Chúng tôi tin tưởng rằng sự hợp tác giữa Tiến Thịnh JSC và Quý Đối tác sẽ ngày càng bền chặt, cùng nhau kiến tạo những công trình bền vững cho tương lai.</p>
+          <div class="page-content__signature">
+            <p class="page-content__sign-regards">Trân trọng,</p>
+            <p class="page-content__sign-name">Nguyễn Văn Thịnh</p>
+            <p class="page-content__sign-role">Tổng Giám đốc — Tiến Thịnh JSC</p>
+          </div>
         </div>
       </div>
     </main>
@@ -632,14 +683,44 @@
     </main>
 
     <!-- Page: Giá Trị Cốt Lõi -->
-    <main class="page page--subpage" id="page-about-values">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Giá Trị Cốt Lõi</h1>
-          <p class="content-page__intro">Những giá trị nền tảng định hình văn hóa và hoạt động của Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-values">
+      <div class="page-hero" style="--hero-bg: url('/images/construction-team.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Giá Trị Cốt Lõi</h1>
+          <p class="page-hero__subtitle">Nền tảng cho mọi thành công</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="page-content">
+        <div class="page-content__body">
+          <p class="page-content__intro-text">Tiến Thịnh JSC xây dựng văn hóa doanh nghiệp dựa trên 5 giá trị cốt lõi — là kim chỉ nam cho mọi hoạt động và quyết định.</p>
+          <div class="values-grid">
+            <div class="value-card">
+              <div class="value-card__icon">⚡</div>
+              <h3 class="value-card__title">Chất Lượng</h3>
+              <p class="value-card__desc">Không thỏa hiệp về chất lượng. Mọi sản phẩm đều đạt tiêu chuẩn ISO 9001:2015 và AWS D1.1 trước khi xuất xưởng.</p>
+            </div>
+            <div class="value-card">
+              <div class="value-card__icon">🤝</div>
+              <h3 class="value-card__title">Uy Tín</h3>
+              <p class="value-card__desc">Cam kết đúng tiến độ, đúng ngân sách. Lời nói đi đôi với việc làm — xây dựng niềm tin qua từng dự án.</p>
+            </div>
+            <div class="value-card">
+              <div class="value-card__icon">🔬</div>
+              <h3 class="value-card__title">Đổi Mới</h3>
+              <p class="value-card__desc">Tiên phong ứng dụng công nghệ BIM, CNC tự động hóa và phương pháp quản lý dự án hiện đại.</p>
+            </div>
+            <div class="value-card">
+              <div class="value-card__icon">👷</div>
+              <h3 class="value-card__title">An Toàn</h3>
+              <p class="value-card__desc">An toàn lao động là ưu tiên hàng đầu. Zero accident là mục tiêu, không phải khẩu hiệu.</p>
+            </div>
+            <div class="value-card">
+              <div class="value-card__icon">🌱</div>
+              <h3 class="value-card__title">Bền Vững</h3>
+              <p class="value-card__desc">Phát triển hài hòa với môi trường. Chứng nhận ISO 14001:2015 — tối ưu tài nguyên, giảm thiểu phát thải.</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -906,6 +987,19 @@
 
     <!-- Site Footer -->
     <footer class="site-footer" id="siteFooter">
+      <!-- Footer CTA Section -->
+      <div class="footer-cta">
+        <div class="footer-cta__inner">
+          <div class="footer-cta__content">
+            <h2 class="footer-cta__title">Bạn có dự án cần tư vấn?</h2>
+            <p class="footer-cta__desc">Đội ngũ chuyên gia của Tiến Thịnh JSC sẵn sàng đồng hành cùng bạn — từ tư vấn thiết kế đến thi công hoàn thiện.</p>
+          </div>
+          <a href="#" class="footer-cta__btn" data-page="contact">
+            <span>LIÊN HỆ NGAY</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </div>
       <div class="footer__inner">
         <div class="footer__top">
           <div class="footer__brand">

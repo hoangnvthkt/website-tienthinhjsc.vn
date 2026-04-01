@@ -1,3 +1,19 @@
+# Dependencies
+node_modules
+admin/node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment variables (contains API keys)
+.env
+.env.local
+.env.*.local
+admin/.env
+admin/.env.local
+admin/.env.*.local
+
 # Logs
 logs
 *.log
@@ -6,11 +22,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +33,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Gemini / AI assistant
+.gemini/
+.agents/

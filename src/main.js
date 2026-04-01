@@ -1,5 +1,6 @@
 import './style.css';
-import { products } from './data.js';
+import { products as staticProducts } from './data.js';
+import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact } from './api.js';
 
 // ============================================
 // APP STATE
@@ -15,6 +16,9 @@ const state = {
   mouseY: 0,
   scrollY: 0,
 };
+
+// Products data — will be replaced with Supabase data
+let products = staticProducts;
 
 // 3D Cube state
 let cubeRotX = -15;
@@ -81,17 +85,21 @@ function navigateTo(page, data = null) {
   state.currentPage = page;
 
   // Show/hide header based on page
+  const statsBar = document.getElementById('statsBar');
   if (page === 'product') {
     header.style.display = 'none';
     viewToggle.style.display = 'none';
+    if (statsBar) statsBar.style.display = 'none';
     if (data) openProduct(data);
   } else if (page === 'home') {
     header.style.display = '';
     viewToggle.style.display = '';
+    if (statsBar) statsBar.style.display = '';
     cleanupCube();
   } else {
     header.style.display = '';
     viewToggle.style.display = 'none';
+    if (statsBar) statsBar.style.display = 'none';
     cleanupCube();
   }
 
@@ -201,7 +209,7 @@ function setupSearch() {
 // ============================================
 
 const PERSPECTIVE  = 800;
-const BASE_SIZE    = 300;       // fixed DOM size; actual size via scale()
+const BASE_SIZE    = window.innerWidth <= 768 ? 200 : 300; // smaller cubes on mobile
 const AUTO_SPEED   = 1.2;
 const BOOST_DECAY  = 0.92;
 const Z_NEAR       = 100;
@@ -240,56 +248,117 @@ function createSpaceView() {
     const worldX = Math.cos(angle) * radius * vpW;
     const worldY = Math.sin(angle) * radius * vpH * 0.55;
 
-    const obj = { product, z, worldX, worldY, el: null };
+    // Per-cube fixed angle — unique so each cube looks different but static
+    const rotTiltX = -15 + Math.random() * 10;        // slight downward tilt for perspective
+    const rotFixedY = -25 + Math.random() * 50;       // fixed Y angle — shows 2 faces
+
+    const obj = { product, z, worldX, worldY, el: null, cubeEl: null, rotFixedY: rotFixedY, rotTiltX };
     spaceObjects.push(obj);
 
-    // DOM — fixed size, scaled via transform
+    // DOM — outer wrapper (positioned/scaled by renderSpaceFrame)
     const item = document.createElement('div');
     item.className = 'space-item space-item--3d';
     item.style.width  = BASE_SIZE + 'px';
     item.style.height = BASE_SIZE + 'px';
 
-    const img = document.createElement('img');
-    img.src = product.image;
-    img.alt = product.name;
-    img.loading = (i < 4) ? 'eager' : 'lazy';
+    // Inner 3D cube scene
+    const scene = document.createElement('div');
+    scene.className = 'cube-scene-mini';
 
+    const cube = document.createElement('div');
+    cube.className = 'cube-mini';
+    const halfSize = BASE_SIZE / 2;
+    cube.style.setProperty('--cube-tz', halfSize + 'px');
+
+    // 4 image faces
+    const sideFaces = ['front', 'right', 'back', 'left'];
+    const images = product.images;
+    sideFaces.forEach((face, fi) => {
+      const faceDiv = document.createElement('div');
+      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+      const img = document.createElement('img');
+      img.src = images[fi % images.length];
+      img.alt = `${product.name} - ${face}`;
+      img.loading = (i < 4) ? 'eager' : 'lazy';
+      faceDiv.appendChild(img);
+      cube.appendChild(faceDiv);
+    });
+
+    // Top & bottom faces with logo
+    ['top', 'bottom'].forEach(face => {
+      const faceDiv = document.createElement('div');
+      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+      const logo = document.createElement('img');
+      logo.src = '/images/logo.png';
+      logo.alt = 'Tiến Thịnh JSC';
+      faceDiv.appendChild(logo);
+      cube.appendChild(faceDiv);
+    });
+
+    scene.appendChild(cube);
+    item.appendChild(scene);
+
+    // Label
     const label = document.createElement('span');
     label.className = 'space-item__label';
     label.textContent = product.name;
-
-    // 3D Tilt glare overlay
-    const glare = document.createElement('div');
-    glare.className = 'space-item__glare';
-
-    item.appendChild(img);
-    item.appendChild(glare);
     item.appendChild(label);
-    item.addEventListener('click', () => navigateTo('product', product));
-    item.addEventListener('mouseenter', () => { isHovering = true; });
-    item.addEventListener('mouseleave', () => {
-      isHovering = false;
-      // Reset 3D tilt
-      img.style.transform = '';
-      img.style.boxShadow = '';
-      glare.style.opacity = '0';
-    });
 
-    // 3D Tilt on mousemove
-    item.addEventListener('mousemove', (e) => {
-      const rect = item.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-      const rotX = (0.5 - y) * 25;
-      const rotY = (x - 0.5) * 25;
-      img.style.transform = `perspective(500px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.06)`;
-      img.style.boxShadow = `${-rotY * 0.8}px ${rotX * 0.8}px 40px rgba(0,0,0,0.25)`;
-      glare.style.opacity = '1';
-      glare.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(255,255,255,0.3), transparent 50%)`;
+    // --- Drag-to-rotate + click-to-navigate ---
+    let dragStartX = 0, dragStartY = 0;
+    let dragLastRotX = obj.rotTiltX, dragLastRotY = obj.rotFixedY;
+    let isDragging = false, didDrag = false;
+
+    const onDown = (e) => {
+      const point = e.touches ? e.touches[0] : e;
+      dragStartX = point.clientX;
+      dragStartY = point.clientY;
+      dragLastRotX = obj.rotTiltX;
+      dragLastRotY = obj.rotFixedY;
+      isDragging = true;
+      didDrag = false;
+      isHovering = true;
+      item.style.cursor = 'grabbing';
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const onMove = (e) => {
+      if (!isDragging) return;
+      const point = e.touches ? e.touches[0] : e;
+      const dx = point.clientX - dragStartX;
+      const dy = point.clientY - dragStartY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) didDrag = true;
+      obj.rotFixedY = dragLastRotY + dx * 0.6;
+      obj.rotTiltX = Math.max(-75, Math.min(75, dragLastRotX - dy * 0.5));
+      cube.style.transform = `rotateX(${obj.rotTiltX}deg) rotateY(${obj.rotFixedY}deg)`;
+    };
+
+    const onUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      isHovering = false;
+      item.style.cursor = 'pointer';
+    };
+
+    item.addEventListener('mousedown', onDown);
+    item.addEventListener('touchstart', onDown, { passive: false });
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchend', onUp);
+
+    // Click only if NOT a drag
+    item.addEventListener('click', (e) => {
+      if (didDrag) { e.preventDefault(); e.stopPropagation(); return; }
+      navigateTo('product', product);
     });
+    item.addEventListener('mouseenter', () => { isHovering = true; });
+    item.addEventListener('mouseleave', () => { isHovering = false; isDragging = false; item.style.cursor = 'pointer'; });
 
     spaceView.appendChild(item);
     obj.el = item;
+    obj.cubeEl = cube;
   });
 
   startAutoFly();
@@ -346,6 +415,11 @@ function renderSpaceFrame() {
       } while (attempts < 5 && isTooClose(obj, newX, newY));
       obj.worldX = newX;
       obj.worldY = newY;
+
+      // Randomize fixed angle on recycle for variety
+      obj.rotFixedY = -25 + Math.random() * 50;
+      obj.rotTiltX = -15 + Math.random() * 10;
+      if (obj.cubeEl) delete obj.cubeEl.dataset.set;
     }
 
     const dz = obj.z - cameraZ;
@@ -363,11 +437,17 @@ function renderSpaceFrame() {
     if (s > 3.0) a = 1 - (s - 3.0) / 2.0;
     if (a <= 0) { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; continue; }
 
-    // Single transform: translate3d (GPU layer) + scale
+    // Wrapper: position + scale via projection
     obj.el.style.transform = `translate3d(${sx - BASE_SIZE * 0.5 * s}px, ${sy - BASE_SIZE * 0.5 * s}px, 0) scale(${s})`;
     obj.el.style.opacity = a.toFixed(3);
     obj.el.style.zIndex  = (s * 100) | 0;
     obj.el.style.pointerEvents = a > 0.3 ? 'auto' : 'none';
+
+    // Static cube angle (set once, or when recycled)
+    if (obj.cubeEl && !obj.cubeEl.dataset.set) {
+      obj.cubeEl.style.transform = `rotateX(${obj.rotTiltX}deg) rotateY(${obj.rotFixedY}deg)`;
+      obj.cubeEl.dataset.set = '1';
+    }
   }
 }
 
@@ -432,12 +512,28 @@ function createGridView() {
     img.alt = product.name;
     img.loading = 'lazy';
 
-    const name = document.createElement('span');
-    name.className = 'grid-item__name';
-    name.textContent = product.name;
+    // Category tag
+    if (product.category) {
+      const tag = document.createElement('span');
+      tag.className = 'grid-item__tag';
+      tag.textContent = product.category;
+      item.appendChild(tag);
+    }
+
+    // Info overlay (slides up on hover)
+    const overlay = document.createElement('div');
+    overlay.className = 'grid-item__overlay';
+    const overlayName = document.createElement('div');
+    overlayName.className = 'grid-item__overlay-name';
+    overlayName.textContent = product.name;
+    const overlaySub = document.createElement('div');
+    overlaySub.className = 'grid-item__overlay-sub';
+    overlaySub.textContent = [product.subtitle, product.year].filter(Boolean).join(' — ');
+    overlay.appendChild(overlayName);
+    overlay.appendChild(overlaySub);
 
     item.appendChild(img);
-    item.appendChild(name);
+    item.appendChild(overlay);
 
     item.addEventListener('click', () => {
       navigateTo('product', product);
@@ -445,6 +541,50 @@ function createGridView() {
 
     gridView.appendChild(item);
   });
+}
+
+// ============================================
+// STATS COUNTER (count-up on first view)
+// ============================================
+function setupStatsCounter() {
+  const statsBar = document.getElementById('statsBar');
+  if (!statsBar) return;
+
+  const numbers = statsBar.querySelectorAll('.stats-bar__number');
+  let hasAnimated = false;
+
+  const observer = new IntersectionObserver((entries) => {
+    if (hasAnimated) return;
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        hasAnimated = true;
+        numbers.forEach(el => animateNumber(el));
+        observer.unobserve(statsBar);
+        break;
+      }
+    }
+  }, { threshold: 0.5 });
+
+  observer.observe(statsBar);
+}
+
+function animateNumber(el) {
+  const target = parseInt(el.dataset.target, 10);
+  const suffix = el.dataset.suffix || '';
+  const duration = 1800; // ms
+  const start = performance.now();
+
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(target * ease);
+    el.textContent = current.toLocaleString('vi-VN') + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
 }
 
 // ============================================
@@ -765,15 +905,22 @@ function setupAccordions() {
 function setupContactForm() {
   const form = $('#contactForm');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      // Simulate form submission
       const submitBtn = form.querySelector('.contact-form__submit');
       const originalText = submitBtn.textContent;
       submitBtn.textContent = 'Đang gửi...';
       submitBtn.disabled = true;
 
-      setTimeout(() => {
+      try {
+        await submitContact({
+          name: form.querySelector('#contactName').value,
+          email: form.querySelector('#contactEmail').value,
+          phone: form.querySelector('#contactPhone').value,
+          subject: form.querySelector('#contactSubject').value,
+          message: form.querySelector('#contactMessage').value,
+        });
+
         submitBtn.textContent = '✓ Đã gửi thành công!';
         submitBtn.style.background = '#228B22';
         submitBtn.style.borderColor = '#228B22';
@@ -785,7 +932,16 @@ function setupContactForm() {
           submitBtn.style.background = '';
           submitBtn.style.borderColor = '';
         }, 2000);
-      }, 1000);
+      } catch (err) {
+        submitBtn.textContent = '✗ Lỗi gửi, thử lại';
+        submitBtn.style.background = '#c0392b';
+        submitBtn.disabled = false;
+        setTimeout(() => {
+          submitBtn.textContent = originalText;
+          submitBtn.style.background = '';
+          submitBtn.style.borderColor = '';
+        }, 3000);
+      }
     });
   }
 }
@@ -812,6 +968,13 @@ function setupScrollReveal() {
     '.contact-info-area',
     '.contact-info__block',
     '.form-group',
+    '.page-content__section',
+    '.page-content__quote',
+    '.page-content__signature',
+    '.page-content__greeting',
+    '.page-content__intro-text',
+    '.value-card',
+    '.footer-cta',
   ];
 
   const elements = document.querySelectorAll(revealSelectors.join(','));
@@ -933,15 +1096,173 @@ function setupResize() {
 }
 
 // ============================================
+// THEME TOGGLE (Dark Mode)
+// ============================================
+function setupThemeToggle() {
+  const toggle = document.getElementById('themeToggle');
+  if (!toggle) return;
+
+  // Apply saved theme or system preference
+  const savedTheme = localStorage.getItem('tt-theme');
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  // Toggle on click
+  toggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+
+    if (next === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    localStorage.setItem('tt-theme', next);
+  });
+
+  // Listen for system preference changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('tt-theme')) {
+      if (e.matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+  });
+}
+
+// ============================================
+// FOOTER CTA — Navigate to contact page
+// ============================================
+function setupFooterCTA() {
+  const ctaBtn = document.querySelector('.footer-cta__btn');
+  if (ctaBtn) {
+    ctaBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo('contact');
+    });
+  }
+}
+
+// ============================================
+// DYNAMIC NEWS RENDERING
+// ============================================
+async function renderNews() {
+  const newsGrid = $('#newsGrid');
+  if (!newsGrid) return;
+
+  const posts = await fetchPosts();
+  if (!posts.length) return; // Keep static HTML if no DB posts
+
+  newsGrid.innerHTML = '';
+  posts.forEach(post => {
+    const article = document.createElement('article');
+    article.className = 'news-card';
+    article.innerHTML = `
+      <div class="news-card__img">
+        <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+      </div>
+      <div class="news-card__content">
+        <span class="news-card__date">${post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : ''}</span>
+        <h3 class="news-card__title">${post.title}</h3>
+        <p class="news-card__excerpt">${post.excerpt || ''}</p>
+      </div>
+    `;
+    newsGrid.appendChild(article);
+  });
+}
+
+// ============================================
+// DYNAMIC DOCUMENTS RENDERING
+// ============================================
+async function renderDocuments() {
+  const docsContainer = document.querySelector('#page-documents .subpage-content');
+  if (!docsContainer) return;
+
+  const docs = await fetchDocuments();
+  if (!docs.length) {
+    docsContainer.innerHTML = '<p>Chưa có tài liệu nào được công bố.</p>';
+    return;
+  }
+
+  const getIcon = (type) => {
+    if (type?.includes('pdf')) return '📄';
+    if (type?.includes('word')) return '📝';
+    if (type?.includes('excel')) return '📊';
+    return '📎';
+  };
+
+  const formatSize = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  docsContainer.innerHTML = `
+    <div class="documents-list">
+      ${docs.map(doc => `
+        <a href="${doc.file_url}" target="_blank" rel="noreferrer" class="doc-item">
+          <span class="doc-item__icon">${getIcon(doc.file_type)}</span>
+          <div class="doc-item__info">
+            <span class="doc-item__title">${doc.title}</span>
+            <span class="doc-item__meta">${formatSize(doc.file_size)}</span>
+          </div>
+          <svg class="doc-item__dl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 15-3 3m0 0-3-3m3 3V9"/><path d="M3 10v8a2 2 0 002 2h14"/></svg>
+        </a>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ============================================
+// DYNAMIC SETTINGS — Update footer/contact with DB values
+// ============================================
+async function applySettings() {
+  const settings = await fetchSettings();
+  if (!settings || !Object.keys(settings).length) return;
+
+  // Update contact info if available
+  const contactPhone = document.querySelector('.contact-info__block:nth-child(3) p');
+  if (contactPhone && settings.contact_phone) {
+    // Don't override hardcoded HTML, just keep it
+  }
+
+  // Update footer copyright year
+  const copyright = document.querySelector('.footer__copyright');
+  if (copyright) {
+    const year = new Date().getFullYear();
+    copyright.textContent = `© ${year} ${settings.company_name || 'Tiến Thịnh JSC'}. All rights reserved.`;
+  }
+}
+
+// ============================================
 // INIT
 // ============================================
-function init() {
+async function init() {
+  setupThemeToggle();
+
+  // Fetch real data from Supabase (fall back to static)
+  try {
+    const supabaseProducts = await fetchProjects();
+    if (supabaseProducts?.length) {
+      products = supabaseProducts;
+    }
+  } catch {
+    console.log('Using static product data');
+  }
+
   createSpaceView();
   createGridView();
   setupNavigation();
   setupMenu();
   setupSearch();
   setupViewToggle();
+  setupStatsCounter();
   setupSpaceScroll();
   setupSlider();
   setupBackButton();
@@ -951,9 +1272,15 @@ function init() {
   setupScrollReveal();
   setupHeaderScroll();
   setupFooterReveal();
+  setupFooterCTA();
 
   // Default to home page
   navigateTo('home');
+
+  // Load dynamic content in background
+  renderNews();
+  renderDocuments();
+  applySettings();
 }
 
 // Start the app
