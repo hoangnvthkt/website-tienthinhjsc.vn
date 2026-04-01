@@ -107,7 +107,7 @@ ul, ol {
   left: 0;
   right: 0;
   z-index: var(--z-header);
-  padding: 0 20px;
+  padding: 0;
   pointer-events: none;
   transition: padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -124,7 +124,7 @@ ul, ol {
   max-width: 100%;
   border: none;
   background: var(--color-bg-light);
-  padding: 0 20px;
+  padding: 0 32px;
   pointer-events: all;
   position: relative;
   box-shadow: 0 1px 8px rgba(0,0,0,0.06);
@@ -3787,11 +3787,11 @@ html[data-theme] .site-footer {
 @media (max-width: 768px) {
   /* Better mobile header spacing */
   .header {
-    padding: 0 12px;
+    padding: 0;
   }
 
   .header__inner {
-    padding: 0 12px;
+    padding: 0 16px;
   }
 
   /* Content pages tighter padding */
