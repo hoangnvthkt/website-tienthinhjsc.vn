@@ -35,6 +35,7 @@ const SETTING_GROUPS = [
     keys: [
       { key: 'social_facebook', label: 'Facebook', type: 'text' },
       { key: 'social_youtube', label: 'YouTube', type: 'text' },
+      { key: 'social_linkedin', label: 'LinkedIn', type: 'text' },
       { key: 'social_zalo', label: 'Zalo', type: 'text' },
       { key: 'social_tiktok', label: 'TikTok', type: 'text' },
     ]
@@ -59,12 +60,18 @@ export default function SettingsPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    supabase.from('site_settings').select('*').then(({ data }) => {
-      const map: Record<string, string> = {}
-      ;(data as Setting[] || []).forEach(s => { map[s.key] = s.value || '' })
-      setSettings(map)
-      setLoading(false)
-    })
+    (async () => {
+      try {
+        const { data } = await supabase.from('site_settings').select('*')
+        const map: Record<string, string> = {}
+        ;(data as Setting[] || []).forEach(s => { map[s.key] = s.value || '' })
+        setSettings(map)
+      } catch (err) {
+        console.error('Fetch settings error:', err)
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
   const handleChange = (key: string, value: string) => {

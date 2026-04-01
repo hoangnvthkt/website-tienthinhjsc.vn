@@ -4,7 +4,9 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { generateSlug } from '@/lib/utils'
+import { logActivity } from '@/lib/activityLog'
 import ImageUploader from '@/components/shared/ImageUploader'
+import SeoFields from '@/components/shared/SeoFields'
 import type { ProjectCategory } from '@/types/database'
 
 interface FormData {
@@ -19,11 +21,14 @@ interface FormData {
   featured_image: string | null
   status: 'draft' | 'published'
   sort_order: number
+  meta_title: string
+  meta_description: string
 }
 
 const initial: FormData = {
   title: '', slug: '', subtitle: '', category: '', category_id: '', year: new Date().getFullYear().toString(),
-  description: '', specs: '', featured_image: null, status: 'draft', sort_order: 0
+  description: '', specs: '', featured_image: null, status: 'draft', sort_order: 0,
+  meta_title: '', meta_description: ''
 }
 
 export default function ProjectFormPage() {
@@ -48,7 +53,8 @@ export default function ProjectFormPage() {
           title: data.title, slug: data.slug, subtitle: data.subtitle || '', category: data.category || '',
           category_id: data.category_id || '', year: data.year || '', description: data.description || '',
           specs: data.specs || '', featured_image: data.featured_image, status: data.status,
-          sort_order: data.sort_order
+          sort_order: data.sort_order,
+          meta_title: data.meta_title || '', meta_description: data.meta_description || ''
         })
         setLoading(false)
       })
@@ -78,15 +84,20 @@ export default function ProjectFormPage() {
       category: form.category || null, category_id: form.category_id || null, year: form.year || null,
       description: form.description || null, specs: form.specs || null, featured_image: form.featured_image,
       status: form.status, sort_order: form.sort_order,
+      meta_title: form.meta_title || null, meta_description: form.meta_description || null,
       ...(form.status === 'published' ? { published_at: new Date().toISOString() } : {}),
       ...(!isEdit ? { author_id: user?.id } : {}),
     }
 
-    const { error: dbError } = isEdit
-      ? await supabase.from('projects').update(payload).eq('id', id)
-      : await supabase.from('projects').insert(payload)
+    const { data: result, error: dbError } = isEdit
+      ? await supabase.from('projects').update(payload).eq('id', id).select('id').single()
+      : await supabase.from('projects').insert(payload).select('id').single()
 
     if (dbError) { setError(dbError.message); setSaving(false); return }
+
+    // Log activity
+    logActivity(isEdit ? 'update' : 'create', 'project', form.title, result?.id || id)
+
     navigate('/projects')
   }
 
@@ -169,6 +180,15 @@ export default function ProjectFormPage() {
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
               </div>
             </div>
+
+            {/* SEO Fields */}
+            <SeoFields
+              metaTitle={form.meta_title}
+              metaDescription={form.meta_description}
+              pageTitle={form.title}
+              onMetaTitleChange={(v) => handleChange('meta_title', v)}
+              onMetaDescriptionChange={(v) => handleChange('meta_description', v)}
+            />
 
             <ImageUploader value={form.featured_image} onChange={(url) => handleChange('featured_image', url)} bucket="projects" label="Ảnh đại diện" />
 

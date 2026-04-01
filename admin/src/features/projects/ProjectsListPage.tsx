@@ -18,12 +18,17 @@ export default function ProjectsListPage() {
 
   const fetchProjects = async () => {
     setLoading(true)
-    let query = supabase.from('projects').select('*').order('sort_order', { ascending: true })
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter)
-    if (search) query = query.ilike('title', `%${search}%`)
-    const { data } = await query
-    setProjects(data || [])
-    setLoading(false)
+    try {
+      let query = supabase.from('projects').select('*').order('sort_order', { ascending: true })
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter as 'draft' | 'published')
+      if (search) query = query.ilike('title', `%${search}%`)
+      const { data } = await query
+      setProjects(data || [])
+    } catch (err) {
+      console.error('Fetch projects error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchProjects() }, [statusFilter, search])

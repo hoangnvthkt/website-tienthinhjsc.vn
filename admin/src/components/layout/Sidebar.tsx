@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText, BookOpen,
-  Mail, FileDown, Image, Settings, LogOut
+  Mail, FileDown, Image, Settings, LogOut, Tags, Menu, Users, ClipboardList
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -10,9 +10,13 @@ const navItems = [
   { to: '/projects', icon: FolderKanban, label: 'Dự án' },
   { to: '/posts', icon: FileText, label: 'Bài viết' },
   { to: '/pages', icon: BookOpen, label: 'Trang' },
+  { to: '/categories', icon: Tags, label: 'Danh mục' },
+  { to: '/navigation', icon: Menu, label: 'Navigation' },
   { to: '/contacts', icon: Mail, label: 'Liên hệ' },
   { to: '/documents', icon: FileDown, label: 'Tài liệu' },
   { to: '/media', icon: Image, label: 'Media' },
+  { to: '/users', icon: Users, label: 'Người dùng' },
+  { to: '/activity', icon: ClipboardList, label: 'Nhật ký' },
   { to: '/settings', icon: Settings, label: 'Cài đặt' },
 ]
 

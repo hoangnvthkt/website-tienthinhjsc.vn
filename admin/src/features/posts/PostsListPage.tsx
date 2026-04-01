@@ -2,21 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import type { Post } from '@/types/database'
+import type { Post, PostCategory } from '@/types/database'
 import StatusBadge from '@/components/shared/StatusBadge'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { formatDate, truncate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
-const categoryLabels: Record<string, string> = {
-  'tin-cong-truong': 'Tin công trường',
-  'tuyen-dung': 'Tuyển dụng',
-  'kien-thuc': 'Kiến thức',
-}
 
 export default function PostsListPage() {
   const { profile } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
+  const [categories, setCategories] = useState<PostCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('all')
@@ -24,13 +20,22 @@ export default function PostsListPage() {
 
   const fetchPosts = async () => {
     setLoading(true)
-    let query = supabase.from('posts').select('*').order('created_at', { ascending: false })
-    if (catFilter !== 'all') query = query.eq('category', catFilter)
-    if (search) query = query.ilike('title', `%${search}%`)
-    const { data } = await query
-    setPosts(data || [])
-    setLoading(false)
+    try {
+      let query = supabase.from('posts').select('*').order('created_at', { ascending: false })
+      if (catFilter !== 'all') query = query.eq('category', catFilter)
+      if (search) query = query.ilike('title', `%${search}%`)
+      const { data } = await query
+      setPosts(data || [])
+    } catch (err) {
+      console.error('Fetch posts error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
+
+  useEffect(() => {
+    supabase.from('post_categories').select('*').order('sort_order').then(({ data }) => setCategories(data || []))
+  }, [])
 
   useEffect(() => { fetchPosts() }, [catFilter, search])
 
@@ -53,9 +58,7 @@ export default function PostsListPage() {
           <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
             <option value="all">Tất cả danh mục</option>
-            <option value="tin-cong-truong">Tin công trường</option>
-            <option value="tuyen-dung">Tuyển dụng</option>
-            <option value="kien-thuc">Kiến thức</option>
+            {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
           </select>
         </div>
         <Link to="/posts/new" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
@@ -88,7 +91,7 @@ export default function PostsListPage() {
                   <p className="text-xs text-gray-500 mt-0.5">{truncate(post.excerpt || '', 60)}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md">{categoryLabels[post.category] || post.category}</span>
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md">{categories.find(c => c.slug === post.category)?.name || post.category}</span>
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={post.status} /></td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(post.created_at)}</td>

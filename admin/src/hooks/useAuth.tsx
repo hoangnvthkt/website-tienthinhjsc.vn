@@ -36,48 +36,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    let initialized = false
 
-    // Initial session check with timeout
-    const sessionPromise = supabase.auth.getSession()
-    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 4000))
-
-    Promise.race([sessionPromise, timeoutPromise]).then(async (result) => {
-      if (!mounted) return
-
-      if (result && 'data' in result && result.data.session?.user) {
-        const s = result.data.session
-        const p = await fetchProfile(s.user.id)
-        if (mounted) {
-          setUser(s.user)
-          setSession(s)
-          setProfile(p)
-        }
+    const markReady = () => {
+      if (mounted && !initialized) {
+        initialized = true
+        setLoading(false)
       }
-      if (mounted) setLoading(false)
-    })
+    }
 
-    // Listen for auth changes
+    // SAFETY: Always stop loading after 3s max — prevents infinite spinner
+    const safetyTimer = setTimeout(markReady, 3000)
+
+    // 1. Set up auth listener FIRST (Supabase recommended pattern)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
         if (!mounted) return
+
         if (newSession?.user) {
           setUser(newSession.user)
           setSession(newSession)
-          setLoading(false)
-          // Fetch profile in background (don't block UI)
+          markReady()
+          // Fetch profile in background
           const p = await fetchProfile(newSession.user.id)
           if (mounted) setProfile(p)
         } else {
           setUser(null)
           setProfile(null)
           setSession(null)
-          setLoading(false)
+          markReady()
         }
       }
     )
 
+    // 2. Check existing session (may already resolve via onAuthStateChange)
+    const initSession = async () => {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        if (!mounted || initialized) return
+
+        if (s?.user) {
+          setUser(s.user)
+          setSession(s)
+          const p = await fetchProfile(s.user.id)
+          if (mounted) setProfile(p)
+        }
+        markReady()
+      } catch (err) {
+        console.warn('getSession failed:', err)
+        markReady()
+      }
+    }
+    initSession()
+
     return () => {
       mounted = false
+      clearTimeout(safetyTimer)
       subscription.unsubscribe()
     }
   }, [fetchProfile])
@@ -88,10 +102,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut()
+    // Clear React state immediately
     setUser(null)
     setProfile(null)
     setSession(null)
+
+    // Clear all Supabase tokens from localStorage
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+
+    // Try API signout (don't block on failure)
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.warn('Sign out API error:', err)
+    }
   }, [])
 
   return (

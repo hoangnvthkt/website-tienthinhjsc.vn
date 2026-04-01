@@ -1,6 +1,6 @@
 import './style.css';
 import { products as staticProducts } from './data.js';
-import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact } from './api.js';
+import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation } from './api.js';
 
 // ============================================
 // APP STATE
@@ -975,6 +975,10 @@ function setupScrollReveal() {
     '.page-content__intro-text',
     '.value-card',
     '.footer-cta',
+    '.project-card',
+    '.doc-item',
+    '.project-filters',
+    '.empty-state',
   ];
 
   const elements = document.querySelectorAll(revealSelectors.join(','));
@@ -1030,7 +1034,7 @@ function setupScrollReveal() {
 }
 
 // ============================================
-// HEADER SCROLL SHRINK
+// HEADER SCROLL SHRINK + GLASS MORPHISM
 // ============================================
 let scrollIdleTimer = null;
 
@@ -1044,6 +1048,13 @@ function setupHeaderScroll() {
     // Shrink header when scrolling past 50px
     if (scrollY > 50) {
       header.classList.add('header--compact');
+    }
+
+    // Glass morphism effect when scrolled
+    if (scrollY > 10) {
+      header.classList.add('header--glass');
+    } else {
+      header.classList.remove('header--glass');
     }
 
     // Clear previous idle timer
@@ -1150,6 +1161,24 @@ function setupFooterCTA() {
 }
 
 // ============================================
+// SKELETON LOADING HELPERS
+// ============================================
+function createSkeletonCards(container, count = 6) {
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement('div');
+    card.className = 'skeleton-card';
+    card.innerHTML = `
+      <div class="skeleton-card__img skeleton"></div>
+      <div class="skeleton-card__line skeleton skeleton-card__line--long"></div>
+      <div class="skeleton-card__line skeleton skeleton-card__line--medium"></div>
+      <div class="skeleton-card__line skeleton skeleton-card__line--short"></div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+// ============================================
 // DYNAMIC NEWS RENDERING
 // ============================================
 async function renderNews() {
@@ -1162,7 +1191,7 @@ async function renderNews() {
   newsGrid.innerHTML = '';
   posts.forEach(post => {
     const article = document.createElement('article');
-    article.className = 'news-card';
+    article.className = 'news-card reveal';
     article.innerHTML = `
       <div class="news-card__img">
         <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
@@ -1186,15 +1215,34 @@ async function renderDocuments() {
 
   const docs = await fetchDocuments();
   if (!docs.length) {
-    docsContainer.innerHTML = '<p>Chưa có tài liệu nào được công bố.</p>';
+    docsContainer.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">📄</div>
+        <h3 class="empty-state__title">Chưa có tài liệu</h3>
+        <p class="empty-state__desc">Tài liệu kỹ thuật sẽ sớm được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+    `;
     return;
   }
 
   const getIcon = (type) => {
     if (type?.includes('pdf')) return '📄';
-    if (type?.includes('word')) return '📝';
-    if (type?.includes('excel')) return '📊';
+    if (type?.includes('excel') || type?.includes('spreadsheet')) return '📊';
+    if (type?.includes('powerpoint') || type?.includes('presentation')) return '📊';
+    if (type?.includes('word') || type?.includes('document')) return '📝';
+    if (type?.includes('acad') || type?.includes('dwg')) return '📐';
+    if (type?.includes('zip') || type?.includes('rar')) return '📦';
     return '📎';
+  };
+
+  const getFileExt = (type) => {
+    if (type?.includes('pdf')) return 'PDF';
+    if (type?.includes('excel') || type?.includes('spreadsheet')) return 'XLSX';
+    if (type?.includes('powerpoint') || type?.includes('presentation')) return 'PPTX';
+    if (type?.includes('word') || type?.includes('document')) return 'DOCX';
+    if (type?.includes('acad') || type?.includes('dwg')) return 'DWG';
+    if (type?.includes('zip')) return 'ZIP';
+    return 'FILE';
   };
 
   const formatSize = (bytes) => {
@@ -1204,19 +1252,285 @@ async function renderDocuments() {
   };
 
   docsContainer.innerHTML = `
-    <div class="documents-list">
+    <div class="documents-grid">
       ${docs.map(doc => `
-        <a href="${doc.file_url}" target="_blank" rel="noreferrer" class="doc-item">
-          <span class="doc-item__icon">${getIcon(doc.file_type)}</span>
-          <div class="doc-item__info">
-            <span class="doc-item__title">${doc.title}</span>
-            <span class="doc-item__meta">${formatSize(doc.file_size)}</span>
+        <a href="${doc.file_url}" target="_blank" rel="noreferrer" class="doc-card" data-reveal>
+          <div class="doc-card__header">
+            <span class="doc-card__icon">${getIcon(doc.file_type)}</span>
+            <span class="doc-card__badge">${getFileExt(doc.file_type)}</span>
           </div>
-          <svg class="doc-item__dl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 15-3 3m0 0-3-3m3 3V9"/><path d="M3 10v8a2 2 0 002 2h14"/></svg>
+          <div class="doc-card__body">
+            <h3 class="doc-card__title">${doc.title}</h3>
+            ${doc.description ? `<p class="doc-card__desc">${doc.description}</p>` : ''}
+            <div class="doc-card__meta">
+              <span>${formatSize(doc.file_size)}</span>
+            </div>
+          </div>
+          <div class="doc-card__footer">
+            <span class="doc-card__dl-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Tải xuống
+            </span>
+          </div>
         </a>
       `).join('')}
     </div>
   `;
+}
+
+// ============================================
+// DYNAMIC PROJECT PAGES — "Dự Án Đã Triển Khai"
+// ============================================
+async function renderProjectsPage() {
+  const container = document.querySelector('#page-proj-done .subpage-content');
+  if (!container) return;
+
+  // Show skeleton immediately
+  container.innerHTML = '<div class="projects-grid" id="projDoneGrid"></div>';
+  const grid = container.querySelector('#projDoneGrid');
+  createSkeletonCards(grid, 6);
+
+  try {
+    const projectData = await fetchProjects();
+    if (!projectData?.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">🏗️</div>
+          <h3 class="empty-state__title">Chưa có dự án</h3>
+          <p class="empty-state__desc">Các dự án đã triển khai sẽ sớm được cập nhật.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Get unique categories
+    const categories = [...new Set(projectData.map(p => p.category).filter(Boolean))];
+
+    // Build filter buttons
+    let filtersHTML = '';
+    if (categories.length > 1) {
+      filtersHTML = `
+        <div class="project-filters">
+          <button class="project-filter-btn active" data-filter="all">Tất cả</button>
+          ${categories.map(cat => `<button class="project-filter-btn" data-filter="${cat}">${cat}</button>`).join('')}
+        </div>
+      `;
+    }
+
+    // Build cards
+    const cardsHTML = projectData.map(p => `
+      <div class="project-card reveal" data-category="${p.category || ''}" data-product-id="${p.id}">
+        <div class="project-card__image">
+          <img src="${p.image}" alt="${p.name}" loading="lazy" />
+          ${p.category ? `<span class="project-card__category">${p.category}</span>` : ''}
+        </div>
+        <div class="project-card__body">
+          <h3 class="project-card__title">${p.name}</h3>
+          <p class="project-card__subtitle">${p.subtitle || p.description || ''}</p>
+          <div class="project-card__meta">
+            ${p.year ? `
+              <span class="project-card__meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                ${p.year}
+              </span>
+            ` : ''}
+            <span class="project-card__meta-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Tiến Thịnh JSC
+            </span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      ${filtersHTML}
+      <div class="projects-grid" id="projDoneGrid">${cardsHTML}</div>
+    `;
+
+    // Setup filter buttons
+    const filterBtns = container.querySelectorAll('.project-filter-btn');
+    const cards = container.querySelectorAll('.project-card');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        cards.forEach(card => {
+          if (filter === 'all' || card.dataset.category === filter) {
+            card.style.display = '';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // Click to navigate to product detail
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.productId;
+        const product = projectData.find(p => p.id === id || p.id?.toString() === id);
+        if (product) navigateTo('product', product);
+      });
+    });
+
+    // Re-init scroll reveals for new elements
+    setTimeout(() => setupScrollReveal(), 100);
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">⚠️</div>
+        <h3 class="empty-state__title">Không tải được dữ liệu</h3>
+        <p class="empty-state__desc">Vui lòng thử lại sau.</p>
+      </div>
+    `;
+  }
+}
+
+// ============================================
+// DYNAMIC OTHER PROJECT SUB-PAGES
+// ============================================
+async function renderOtherProjectPages() {
+  const projectData = await fetchProjects();
+  if (!projectData?.length) return;
+
+  // Helper to build a small project grid
+  function buildProjectGrid(items) {
+    return `
+      <div class="projects-grid">
+        ${items.map(p => `
+          <div class="project-card reveal" data-product-id="${p.id}">
+            <div class="project-card__image">
+              <img src="${p.image}" alt="${p.name}" loading="lazy" />
+              ${p.category ? `<span class="project-card__category">${p.category}</span>` : ''}
+            </div>
+            <div class="project-card__body">
+              <h3 class="project-card__title">${p.name}</h3>
+              <p class="project-card__subtitle">${p.subtitle || p.description || ''}</p>
+              <div class="project-card__meta">
+                ${p.year ? `
+                  <span class="project-card__meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    ${p.year}
+                  </span>
+                ` : ''}
+                <span class="project-card__meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Tiến Thịnh JSC
+                </span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // "Dự Án Đang Triển Khai" — show recent projects as ongoing
+  const ongoingContainer = document.querySelector('#page-proj-ongoing .subpage-content');
+  if (ongoingContainer) {
+    const recent = projectData.slice(0, 4);
+    ongoingContainer.innerHTML = recent.length ? buildProjectGrid(recent) : `
+      <div class="empty-state">
+        <div class="empty-state__icon">🔨</div>
+        <h3 class="empty-state__title">Chưa có dự án đang triển khai</h3>
+        <p class="empty-state__desc">Thông tin sẽ sớm được cập nhật.</p>
+      </div>
+    `;
+  }
+
+  // "Theo Quốc Gia" — show all projects grouped
+  const countryContainer = document.querySelector('#page-proj-country .subpage-content');
+  if (countryContainer) {
+    countryContainer.innerHTML = buildProjectGrid(projectData.slice(0, 6));
+  }
+
+  // "Theo Lĩnh Vực" — show all projects with category badges
+  const fieldContainer = document.querySelector('#page-proj-field .subpage-content');
+  if (fieldContainer) {
+    fieldContainer.innerHTML = buildProjectGrid(projectData);
+  }
+
+  // Attach click handlers for navigation
+  document.querySelectorAll('#page-proj-ongoing .project-card, #page-proj-country .project-card, #page-proj-field .project-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.productId;
+      const product = projectData.find(p => p.id === id || p.id?.toString() === id);
+      if (product) navigateTo('product', product);
+    });
+  });
+
+  // Re-init scroll reveals
+  setTimeout(() => setupScrollReveal(), 150);
+}
+
+// ============================================
+// DYNAMIC SUB-PAGE NEWS — Populate news sub-categories
+// ============================================
+async function renderNewsSubpages() {
+  const subpages = [
+    { id: 'page-news-site', label: 'Tin Công Trường' },
+    { id: 'page-news-recruit', label: 'Tin Tuyển Dụng' },
+    { id: 'page-news-knowledge', label: 'Kiến Thức Chuyên Môn' },
+  ];
+
+  const posts = await fetchPosts();
+  if (!posts.length) return;
+
+  subpages.forEach(({ id }) => {
+    const container = document.querySelector(`#${id} .subpage-content`);
+    if (!container) return;
+
+    // Show latest posts for all news sub-pages
+    if (posts.length) {
+      container.innerHTML = `
+        <div class="news-grid">
+          ${posts.slice(0, 4).map(post => `
+            <article class="news-card reveal">
+              <div class="news-card__img">
+                <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+              </div>
+              <div class="news-card__content">
+                <span class="news-card__date">${post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : ''}</span>
+                <h3 class="news-card__title">${post.title}</h3>
+                <p class="news-card__excerpt">${post.excerpt || ''}</p>
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      `;
+    }
+  });
+}
+
+// ============================================
+// ENHANCED LAZY-LOADING WITH SHIMMER
+// ============================================
+function setupLazyImages() {
+  const images = document.querySelectorAll('img[loading="lazy"]');
+  
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.classList.add('loaded');
+          imageObserver.unobserve(img);
+        }
+      });
+    }, { rootMargin: '100px' });
+
+    images.forEach(img => {
+      if (img.complete) {
+        img.classList.add('loaded');
+      } else {
+        img.addEventListener('load', () => img.classList.add('loaded'));
+        imageObserver.observe(img);
+      }
+    });
+  }
 }
 
 // ============================================
@@ -1226,18 +1540,252 @@ async function applySettings() {
   const settings = await fetchSettings();
   if (!settings || !Object.keys(settings).length) return;
 
-  // Update contact info if available
-  const contactPhone = document.querySelector('.contact-info__block:nth-child(3) p');
-  if (contactPhone && settings.contact_phone) {
-    // Don't override hardcoded HTML, just keep it
+  const year = new Date().getFullYear();
+  const companyName = settings.company_name || 'Tiến Thịnh JSC';
+
+  // === Footer Tagline ===
+  const tagline = document.getElementById('footerTagline');
+  if (tagline && settings.company_description) {
+    tagline.textContent = `${companyName} — ${settings.company_description}`;
   }
 
-  // Update footer copyright year
-  const copyright = document.querySelector('.footer__copyright');
-  if (copyright) {
-    const year = new Date().getFullYear();
-    copyright.textContent = `© ${year} ${settings.company_name || 'Tiến Thịnh JSC'}. All rights reserved.`;
+  // === Footer Contact Info ===
+  const footerAddress = document.getElementById('footerAddress');
+  if (footerAddress && settings.contact_address) {
+    footerAddress.textContent = settings.contact_address;
   }
+
+  const footerPhone = document.getElementById('footerPhone');
+  if (footerPhone && settings.contact_phone) {
+    footerPhone.textContent = settings.contact_phone;
+  }
+
+  const footerEmail = document.getElementById('footerEmail');
+  if (footerEmail && settings.contact_email) {
+    footerEmail.textContent = settings.contact_email;
+  }
+
+  // === Footer Copyright ===
+  const copyright = document.getElementById('footerCopyright');
+  if (copyright) {
+    copyright.textContent = `© ${year} ${companyName}. All rights reserved.`;
+  }
+
+  // === Social Links ===
+  const socialFb = document.getElementById('socialFacebook');
+  if (socialFb && settings.social_facebook) {
+    socialFb.href = settings.social_facebook;
+    socialFb.target = '_blank';
+    socialFb.rel = 'noopener';
+  }
+
+  const socialLi = document.getElementById('socialLinkedin');
+  if (socialLi && settings.social_linkedin) {
+    socialLi.href = settings.social_linkedin;
+    socialLi.target = '_blank';
+    socialLi.rel = 'noopener';
+  }
+
+  const socialYt = document.getElementById('socialYoutube');
+  if (socialYt && settings.social_youtube) {
+    socialYt.href = settings.social_youtube;
+    socialYt.target = '_blank';
+    socialYt.rel = 'noopener';
+  }
+
+  // === Contact Page Info ===
+  // Update contact page phone/email/address if they exist
+  const contactPhoneEl = document.querySelector('.contact-info__block:nth-child(3) p');
+  if (contactPhoneEl && (settings.contact_phone || settings.contact_email)) {
+    const parts = [];
+    if (settings.contact_phone) parts.push(`<strong>Tel:</strong> ${settings.contact_phone}`);
+    if (settings.contact_hotline) parts.push(`<strong>Hotline:</strong> ${settings.contact_hotline}`);
+    if (settings.contact_email) parts.push(`<strong>Email:</strong> ${settings.contact_email}`);
+    if (parts.length) contactPhoneEl.innerHTML = parts.join('<br/>');
+  }
+
+  // === SEO Meta Tags ===
+  if (settings.seo_title) {
+    document.title = settings.seo_title;
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.content = settings.seo_title;
+  }
+
+  if (settings.seo_description) {
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.content = settings.seo_description;
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.content = settings.seo_description;
+  }
+
+  // === Google Analytics ===
+  if (settings.google_analytics && !document.getElementById('ga-script')) {
+    const gaScript = document.createElement('script');
+    gaScript.id = 'ga-script';
+    gaScript.async = true;
+    gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics}`;
+    document.head.appendChild(gaScript);
+
+    const gaInit = document.createElement('script');
+    gaInit.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${settings.google_analytics}');`;
+    document.head.appendChild(gaInit);
+  }
+
+  console.log('✅ Settings applied from Supabase');
+}
+
+// ============================================
+// DYNAMIC NAVIGATION — Build menu from Supabase
+// ============================================
+async function renderNavigation() {
+  const navItems = await fetchNavigation('header');
+  if (!navItems || !navItems.length) return; // Keep hardcoded HTML
+
+  // Split items: first half → left nav, second half → right nav
+  // Based on current layout: items 0-3 are left (Trang chủ, Giới thiệu, Năng lực, Dịch vụ)
+  // items 4-7 are right (Dự án, Tin tức, Liên hệ, Tài liệu)
+  const midpoint = Math.ceil(navItems.length / 2);
+  const leftItems = navItems.slice(0, midpoint);
+  const rightItems = navItems.slice(midpoint);
+
+  // Build a nav link
+  function buildNavLink(item) {
+    const dataPage = item.link_type === 'page' ? item.link_value : null;
+    const href = item.link_type === 'custom' ? (item.link_value || '#') : '#';
+    const target = item.target || '_self';
+    const attrs = dataPage ? `data-page="${dataPage}"` : '';
+    const targetAttr = target === '_blank' ? 'target="_blank" rel="noopener"' : '';
+    return `<a href="${href}" ${attrs} class="header__nav-link" ${targetAttr}>${item.title}${
+      item.children?.length
+        ? ' <svg class="header__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>'
+        : ''
+    }</a>`;
+  }
+
+  // Build submenu
+  function buildSubmenu(children) {
+    if (!children?.length) return '';
+    const lis = children.map(child => {
+      const dataPage = child.link_type === 'page' ? child.link_value : null;
+      const href = child.link_type === 'custom' ? (child.link_value || '#') : '#';
+      const attrs = dataPage ? `data-page="${dataPage}"` : '';
+      return `<li><a href="${href}" ${attrs} class="header__sub-link">${child.title}</a></li>`;
+    }).join('');
+    return `<ul class="header__submenu">${lis}</ul>`;
+  }
+
+  // Build nav list HTML
+  function buildNavList(items) {
+    return items.map(item => {
+      const hasSub = item.children?.length > 0;
+      const cls = hasSub ? 'header__nav-item header__nav-item--has-sub' : 'header__nav-item';
+      return `<li class="${cls}">${buildNavLink(item)}${buildSubmenu(item.children)}</li>`;
+    }).join('');
+  }
+
+  // Update header left nav
+  const leftNav = document.getElementById('headerNavLeft');
+  if (leftNav) {
+    leftNav.innerHTML = `<ul class="header__nav-list">${buildNavList(leftItems)}</ul>`;
+  }
+
+  // Update header right nav
+  const rightNav = document.getElementById('headerNavRight');
+  if (rightNav) {
+    rightNav.innerHTML = `<ul class="header__nav-list">${buildNavList(rightItems)}</ul>`;
+  }
+
+  // Update mobile nav overlay
+  const overlayContent = document.querySelector('.nav-overlay__content');
+  if (overlayContent) {
+    const overlayLinks = navItems.map(item => {
+      if (item.children?.length) {
+        const subLinks = item.children.map(child => {
+          const dataPage = child.link_type === 'page' ? child.link_value : null;
+          const href = child.link_type === 'custom' ? (child.link_value || '#') : '#';
+          const attrs = dataPage ? `data-page="${dataPage}"` : '';
+          return `<li><a href="${href}" ${attrs} class="nav-link">${child.title}</a></li>`;
+        }).join('');
+        return `<li class="nav-overlay__group">
+          <span class="nav-overlay__group-title">${item.title}</span>
+          <ul class="nav-overlay__sub">${subLinks}</ul>
+        </li>`;
+      } else {
+        const dataPage = item.link_type === 'page' ? item.link_value : null;
+        const href = item.link_type === 'custom' ? (item.link_value || '#') : '#';
+        const attrs = dataPage ? `data-page="${dataPage}"` : '';
+        return `<li><a href="${href}" ${attrs} class="nav-link">${item.title}</a></li>`;
+      }
+    }).join('');
+
+    // Keep existing footer section of overlay
+    const existingFooter = overlayContent.querySelector('.nav-overlay__footer');
+    const footerHTML = existingFooter ? existingFooter.outerHTML : '';
+
+    overlayContent.innerHTML = `<ul class="nav-overlay__links">${overlayLinks}</ul>${footerHTML}`;
+  }
+
+  // Re-bind navigation events on new links
+  document.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = link.getAttribute('data-page');
+      navigateTo(page);
+    });
+  });
+
+  // Re-bind overlay nav links
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = link.getAttribute('data-page');
+      if (page) navigateTo(page);
+    });
+  });
+
+  console.log(`✅ Navigation loaded: ${navItems.length} items from Supabase`);
+}
+
+// ============================================
+// DYNAMIC FOOTER NAV — Build footer link columns from Supabase
+// ============================================
+async function renderFooterNav() {
+  const footerItems = await fetchNavigation('footer');
+  if (!footerItems || !footerItems.length) return; // Keep hardcoded
+
+  const footerLinksContainer = document.querySelector('.footer__links');
+  if (!footerLinksContainer) return;
+
+  // Keep the contact column (last one) — it's handled by applySettings
+  const contactCol = footerLinksContainer.querySelector('.footer__col:last-child');
+  const contactHTML = contactCol ? contactCol.outerHTML : '';
+
+  // Build columns from footer nav items (each root = a column)
+  const columnsHTML = footerItems.map(group => {
+    if (!group.children?.length) return '';
+    const links = group.children.map(child => {
+      const dataPage = child.link_type === 'page' ? child.link_value : null;
+      const href = child.link_type === 'custom' ? (child.link_value || '#') : '#';
+      const attrs = dataPage ? `data-page="${dataPage}"` : '';
+      return `<li><a href="${href}" ${attrs}>${child.title}</a></li>`;
+    }).join('');
+    return `<div class="footer__col">
+      <h4 class="footer__heading">${group.title}</h4>
+      <ul class="footer__list">${links}</ul>
+    </div>`;
+  }).join('');
+
+  footerLinksContainer.innerHTML = columnsHTML + contactHTML;
+
+  // Re-bind nav events on new footer links
+  footerLinksContainer.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo(link.getAttribute('data-page'));
+    });
+  });
+
+  console.log(`✅ Footer nav loaded: ${footerItems.length} groups from Supabase`);
 }
 
 // ============================================
@@ -1278,9 +1826,17 @@ async function init() {
   navigateTo('home');
 
   // Load dynamic content in background
+  renderNavigation();
+  renderFooterNav();
   renderNews();
   renderDocuments();
+  renderProjectsPage();
+  renderOtherProjectPages();
+  renderNewsSubpages();
   applySettings();
+
+  // Enhanced lazy-loading after initial render
+  setTimeout(() => setupLazyImages(), 500);
 }
 
 // Start the app

@@ -16,12 +16,17 @@ export default function ContactsPage() {
 
   const fetchContacts = async () => {
     setLoading(true)
-    let query = supabase.from('contacts').select('*').order('created_at', { ascending: false })
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter)
-    if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
-    const { data } = await query
-    setContacts(data || [])
-    setLoading(false)
+    try {
+      let query = supabase.from('contacts').select('*').order('created_at', { ascending: false })
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter as 'new' | 'read' | 'replied')
+      if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
+      const { data } = await query
+      setContacts(data || [])
+    } catch (err) {
+      console.error('Fetch contacts error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchContacts() }, [statusFilter, search])

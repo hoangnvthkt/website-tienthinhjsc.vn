@@ -145,6 +145,48 @@ export async function trackDownload(docId) {
   await supabase.rpc('increment_download', { doc_id: docId }).catch(() => {})
 }
 
+/**
+ * Fetch navigation items from Supabase and build tree structure
+ * @param {string} location - 'header' or 'footer'
+ */
+export async function fetchNavigation(location = 'header') {
+  const cacheKey = `nav_${location}`
+  if (cache[cacheKey]) return cache[cacheKey]
+
+  try {
+    const { data, error } = await supabase
+      .from('navigation_items')
+      .select('*')
+      .eq('menu_location', location)
+      .eq('is_visible', true)
+      .order('sort_order', { ascending: true })
+
+    if (error || !data?.length) {
+      console.warn('Nav fetch failed, using static menu:', error?.message)
+      return null // Null = keep hardcoded HTML
+    }
+
+    // Build tree: group children under parents
+    const map = {}
+    const roots = []
+    data.forEach(item => { map[item.id] = { ...item, children: [] } })
+    data.forEach(item => {
+      const node = map[item.id]
+      if (item.parent_id && map[item.parent_id]) {
+        map[item.parent_id].children.push(node)
+      } else {
+        roots.push(node)
+      }
+    })
+
+    cache[cacheKey] = roots
+    return roots
+  } catch {
+    console.warn('Nav fetch failed, using static menu')
+    return null
+  }
+}
+
 // Color mapping for material tags
 function getTagColor(tag) {
   const map = {

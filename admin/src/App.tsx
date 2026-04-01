@@ -10,10 +10,15 @@ import PostsListPage from '@/features/posts/PostsListPage'
 import PostFormPage from '@/features/posts/PostFormPage'
 import PagesListPage from '@/features/pages/PagesListPage'
 import PageFormPage from '@/features/pages/PageFormPage'
+import CategoriesPage from '@/features/categories/CategoriesPage'
+import PageBuilderPage from '@/features/page-builder/PageBuilderPage'
+import NavigationPage from '@/features/navigation/NavigationPage'
 import ContactsPage from '@/features/contacts/ContactsPage'
 import MediaPage from '@/features/media/MediaPage'
 import DocumentsPage from '@/features/documents/DocumentsPage'
 import SettingsPage from '@/features/settings/SettingsPage'
+import UsersPage from '@/features/users/UsersPage'
+import ActivityLogPage from '@/features/activity/ActivityLogPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 60 * 5, retry: 1 } },
@@ -38,12 +43,22 @@ export default function App() {
                 <Route path="/posts/:id/edit" element={<PostFormPage />} />
                 {/* Pages */}
                 <Route path="/pages" element={<PagesListPage />} />
+                <Route path="/pages/new" element={<PageFormPage />} />
                 <Route path="/pages/:id/edit" element={<PageFormPage />} />
+                <Route path="/pages/:id/builder" element={<PageBuilderPage />} />
+                {/* Categories */}
+                <Route path="/categories" element={<CategoriesPage />} />
+                {/* Navigation */}
+                <Route path="/navigation" element={<NavigationPage />} />
                 {/* Contacts */}
                 <Route path="/contacts" element={<ContactsPage />} />
                 {/* Documents & Media */}
                 <Route path="/documents" element={<DocumentsPage />} />
                 <Route path="/media" element={<MediaPage />} />
+                {/* Users */}
+                <Route path="/users" element={<UsersPage />} />
+                {/* Activity Log */}
+                <Route path="/activity" element={<ActivityLogPage />} />
                 {/* Settings */}
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>

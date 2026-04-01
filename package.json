@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:admin": "cd admin && npm run dev",
+    "dev:all": "vite & cd admin && npm run dev",
     "build": "vite build",
+    "build:admin": "cd admin && npm run build",
+    "build:all": "vite build && cd admin && npm run build",
     "preview": "vite preview"
   },
   "devDependencies": {
