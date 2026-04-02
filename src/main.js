@@ -1306,7 +1306,7 @@ async function renderProjectsPage() {
     // Get unique categories
     const categories = [...new Set(projectData.map(p => p.category).filter(Boolean))];
 
-    // Build filter buttons
+    // Build filter buttons — minimal pill style
     let filtersHTML = '';
     if (categories.length > 1) {
       filtersHTML = `
@@ -1317,27 +1317,34 @@ async function renderProjectsPage() {
       `;
     }
 
-    // Build cards
-    const cardsHTML = projectData.map(p => `
+    // Featured hero project (first item) + remaining grid cards
+    const [featured, ...rest] = projectData;
+
+    const heroHTML = `
+      <div class="project-hero reveal" data-category="${featured.category || ''}" data-product-id="${featured.id}">
+        <div class="project-hero__image">
+          <img src="${featured.image}" alt="${featured.name}" loading="lazy" />
+          <div class="project-hero__overlay">
+            ${featured.category ? `<span class="project-hero__tag">${featured.category}</span>` : ''}
+            <h2 class="project-hero__title">${featured.name}</h2>
+            <p class="project-hero__sub">${featured.subtitle || ''} ${featured.year ? `— ${featured.year}` : ''}</p>
+            <span class="project-hero__cta">Xem chi tiết →</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Build image-overlay cards for remaining projects
+    const cardsHTML = rest.map(p => `
       <div class="project-card reveal" data-category="${p.category || ''}" data-product-id="${p.id}">
         <div class="project-card__image">
           <img src="${p.image}" alt="${p.name}" loading="lazy" />
-          ${p.category ? `<span class="project-card__category">${p.category}</span>` : ''}
-        </div>
-        <div class="project-card__body">
-          <h3 class="project-card__title">${p.name}</h3>
-          <p class="project-card__subtitle">${p.subtitle || p.description || ''}</p>
-          <div class="project-card__meta">
-            ${p.year ? `
-              <span class="project-card__meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                ${p.year}
-              </span>
-            ` : ''}
-            <span class="project-card__meta-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Tiến Thịnh JSC
-            </span>
+          <div class="project-card__overlay">
+            ${p.category ? `<span class="project-card__tag">${p.category}</span>` : ''}
+            <div class="project-card__info">
+              <h3 class="project-card__title">${p.name}</h3>
+              <p class="project-card__subtitle">${p.subtitle || ''} ${p.year ? `— ${p.year}` : ''}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1345,31 +1352,32 @@ async function renderProjectsPage() {
 
     container.innerHTML = `
       ${filtersHTML}
+      ${heroHTML}
       <div class="projects-grid" id="projDoneGrid">${cardsHTML}</div>
     `;
 
     // Setup filter buttons
     const filterBtns = container.querySelectorAll('.project-filter-btn');
-    const cards = container.querySelectorAll('.project-card');
+    const allItems = container.querySelectorAll('.project-card, .project-hero');
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const filter = btn.dataset.filter;
-        cards.forEach(card => {
-          if (filter === 'all' || card.dataset.category === filter) {
-            card.style.display = '';
+        allItems.forEach(item => {
+          if (filter === 'all' || item.dataset.category === filter) {
+            item.style.display = '';
           } else {
-            card.style.display = 'none';
+            item.style.display = 'none';
           }
         });
       });
     });
 
     // Click to navigate to product detail
-    cards.forEach(card => {
-      card.addEventListener('click', () => {
-        const id = card.dataset.productId;
+    allItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.productId;
         const product = projectData.find(p => p.id === id || p.id?.toString() === id);
         if (product) navigateTo('product', product);
       });
