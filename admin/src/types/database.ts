@@ -1,46 +1,503 @@
-// Database types for Supabase
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
-      profiles: {
+      activity_logs: {
         Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_title: string | null
+          entity_type: string
           id: string
-          full_name: string | null
-          avatar_url: string | null
-          role: 'admin' | 'editor' | 'viewer'
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_title?: string | null
+          entity_type: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_title?: string | null
+          entity_type?: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          company: string | null
           created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          download_count: number
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          status: string
+          title: string
           updated_at: string
         }
         Insert: {
-          id: string
-          full_name?: string | null
-          avatar_url?: string | null
-          role?: 'admin' | 'editor' | 'viewer'
+          created_at?: string
+          description?: string | null
+          download_count?: number
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
         }
         Update: {
-          full_name?: string | null
+          created_at?: string
+          description?: string | null
+          download_count?: number
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      media: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navigation_items: {
+        Row: {
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_visible: boolean | null
+          link_type: string
+          link_value: string | null
+          menu_location: string
+          page_id: string | null
+          parent_id: string | null
+          sort_order: number | null
+          target: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_visible?: boolean | null
+          link_type?: string
+          link_value?: string | null
+          menu_location?: string
+          page_id?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+          target?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_visible?: boolean | null
+          link_type?: string
+          link_value?: string | null
+          menu_location?: string
+          page_id?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+          target?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_items_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_sections: {
+        Row: {
+          config: Json | null
+          content: string | null
+          created_at: string | null
+          id: string
+          is_visible: boolean | null
+          media_urls: Json | null
+          page_id: string
+          section_type: string
+          sort_order: number | null
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_visible?: boolean | null
+          media_urls?: Json | null
+          page_id: string
+          section_type: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_visible?: boolean | null
+          media_urls?: Json | null
+          page_id?: string
+          section_type?: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          author_id: string | null
+          content: string | null
+          created_at: string
+          featured_image: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          og_image: string | null
+          parent_id: string | null
+          slug: string
+          sort_order: number
+          status: string
+          template: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+          status?: string
+          template?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+          status?: string
+          template?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          author_id: string | null
+          category: string
+          category_id: string | null
+          content: string | null
+          created_at: string
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          og_image: string | null
+          published_at: string | null
+          slug: string
+          sort_order: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          category_id?: string | null
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          published_at?: string | null
+          slug: string
+          sort_order?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          category_id?: string | null
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          published_at?: string | null
+          slug?: string
+          sort_order?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "post_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
           avatar_url?: string | null
-          role?: 'admin' | 'editor' | 'viewer'
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
         }
         Relationships: []
       }
       project_categories: {
         Row: {
+          created_at: string
           id: string
           name: string
           slug: string
           sort_order: number
-          created_at: string
         }
         Insert: {
+          created_at?: string
+          id?: string
           name: string
           slug: string
           sort_order?: number
         }
         Update: {
+          created_at?: string
+          id?: string
           name?: string
           slug?: string
           sort_order?: number
@@ -49,392 +506,145 @@ export type Database = {
       }
       projects: {
         Row: {
-          id: string
-          title: string
-          slug: string
-          subtitle: string | null
-          category_id: string | null
+          author_id: string | null
           category: string | null
-          description: string | null
-          specs: string | null
-          images: string[]
-          featured_image: string | null
-          status: 'draft' | 'published'
-          sort_order: number
-          year: string | null
-          author_id: string | null
-          published_at: string | null
-          meta_title: string | null
-          meta_description: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          title: string
-          slug: string
-          subtitle?: string | null
-          category_id?: string | null
-          category?: string | null
-          description?: string | null
-          specs?: string | null
-          images?: string[]
-          featured_image?: string | null
-          status?: 'draft' | 'published'
-          sort_order?: number
-          year?: string | null
-          author_id?: string | null
-          published_at?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-        }
-        Update: {
-          title?: string
-          slug?: string
-          subtitle?: string | null
-          category_id?: string | null
-          category?: string | null
-          description?: string | null
-          specs?: string | null
-          images?: string[]
-          featured_image?: string | null
-          status?: 'draft' | 'published'
-          sort_order?: number
-          year?: string | null
-          published_at?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-        }
-        Relationships: []
-      }
-      post_categories: {
-        Row: {
-          id: string
-          name: string
-          slug: string
-          description: string | null
-          sort_order: number
-          created_at: string
-        }
-        Insert: {
-          name: string
-          slug: string
-          description?: string | null
-          sort_order?: number
-        }
-        Update: {
-          name?: string
-          slug?: string
-          description?: string | null
-          sort_order?: number
-        }
-        Relationships: []
-      }
-      posts: {
-        Row: {
-          id: string
-          title: string
-          slug: string
-          excerpt: string | null
-          content: string | null
-          featured_image: string | null
-          category: string
           category_id: string | null
-          status: 'draft' | 'published'
-          author_id: string | null
-          published_at: string | null
-          meta_title: string | null
-          meta_description: string | null
-          og_image: string | null
           created_at: string
-          updated_at: string
-        }
-        Insert: {
-          title: string
-          slug: string
-          excerpt?: string | null
-          content?: string | null
-          featured_image?: string | null
-          category?: string
-          category_id?: string | null
-          status?: 'draft' | 'published'
-          author_id?: string | null
-          published_at?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          og_image?: string | null
-        }
-        Update: {
-          title?: string
-          slug?: string
-          excerpt?: string | null
-          content?: string | null
-          featured_image?: string | null
-          category?: string
-          category_id?: string | null
-          status?: 'draft' | 'published'
-          published_at?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          og_image?: string | null
-        }
-        Relationships: []
-      }
-      pages: {
-        Row: {
-          id: string
-          title: string
-          slug: string
-          content: string | null
+          description: string | null
           featured_image: string | null
-          meta_title: string | null
+          id: string
+          images: Json | null
           meta_description: string | null
-          og_image: string | null
-          parent_id: string | null
-          status: 'draft' | 'published'
+          meta_title: string | null
+          published_at: string | null
+          slug: string
           sort_order: number
-          template: string | null
-          author_id: string | null
-          created_at: string
+          specs: string | null
+          status: string
+          subtitle: string | null
+          title: string
           updated_at: string
+          year: string | null
         }
         Insert: {
-          title: string
-          slug: string
-          content?: string | null
-          featured_image?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          og_image?: string | null
-          parent_id?: string | null
-          status?: 'draft' | 'published'
-          sort_order?: number
-          template?: string | null
           author_id?: string | null
+          category?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          featured_image?: string | null
+          id?: string
+          images?: Json | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          slug: string
+          sort_order?: number
+          specs?: string | null
+          status?: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          year?: string | null
         }
         Update: {
-          title?: string
-          slug?: string
-          content?: string | null
+          author_id?: string | null
+          category?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
           featured_image?: string | null
-          meta_title?: string | null
+          id?: string
+          images?: Json | null
           meta_description?: string | null
-          og_image?: string | null
-          parent_id?: string | null
-          status?: 'draft' | 'published'
+          meta_title?: string | null
+          published_at?: string | null
+          slug?: string
           sort_order?: number
-          template?: string | null
+          specs?: string | null
+          status?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          year?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "project_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      page_sections: {
+      section_templates: {
         Row: {
+          config: Json | null
+          content: string | null
+          created_at: string | null
           id: string
-          page_id: string
+          media_urls: Json | null
+          name: string
           section_type: string
           title: string | null
-          subtitle: string | null
-          content: string | null
-          config: Record<string, unknown>
-          media_urls: string[]
-          sort_order: number
-          is_visible: boolean
-          created_at: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          page_id: string
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          media_urls?: Json | null
+          name: string
           section_type: string
           title?: string | null
-          subtitle?: string | null
-          content?: string | null
-          config?: Record<string, unknown>
-          media_urls?: string[]
-          sort_order?: number
-          is_visible?: boolean
+          updated_at?: string | null
         }
         Update: {
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          media_urls?: Json | null
+          name?: string
           section_type?: string
           title?: string | null
-          subtitle?: string | null
-          content?: string | null
-          config?: Record<string, unknown>
-          media_urls?: string[]
-          sort_order?: number
-          is_visible?: boolean
-        }
-        Relationships: []
-      }
-      navigation_items: {
-        Row: {
-          id: string
-          menu_location: string
-          parent_id: string | null
-          title: string
-          link_type: 'custom' | 'page' | 'category'
-          link_value: string | null
-          page_id: string | null
-          target: string
-          icon: string | null
-          is_visible: boolean
-          sort_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          menu_location?: string
-          parent_id?: string | null
-          title: string
-          link_type?: 'custom' | 'page' | 'category'
-          link_value?: string | null
-          page_id?: string | null
-          target?: string
-          icon?: string | null
-          is_visible?: boolean
-          sort_order?: number
-        }
-        Update: {
-          menu_location?: string
-          parent_id?: string | null
-          title?: string
-          link_type?: 'custom' | 'page' | 'category'
-          link_value?: string | null
-          page_id?: string | null
-          target?: string
-          icon?: string | null
-          is_visible?: boolean
-          sort_order?: number
-        }
-        Relationships: []
-      }
-      contacts: {
-        Row: {
-          id: string
-          name: string
-          email: string | null
-          phone: string | null
-          company: string | null
-          subject: string | null
-          message: string
-          status: 'new' | 'read' | 'replied'
-          created_at: string
-        }
-        Insert: {
-          name: string
-          email?: string | null
-          phone?: string | null
-          company?: string | null
-          subject?: string | null
-          message: string
-          status?: 'new' | 'read' | 'replied'
-        }
-        Update: {
-          status?: 'new' | 'read' | 'replied'
-        }
-        Relationships: []
-      }
-      documents: {
-        Row: {
-          id: string
-          title: string
-          file_url: string
-          file_type: string | null
-          file_size: number | null
-          download_count: number
-          status: 'draft' | 'published'
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          title: string
-          file_url: string
-          file_type?: string | null
-          file_size?: number | null
-          status?: 'draft' | 'published'
-        }
-        Update: {
-          title?: string
-          file_url?: string
-          file_type?: string | null
-          file_size?: number | null
-          status?: 'draft' | 'published'
+          updated_at?: string | null
         }
         Relationships: []
       }
       site_settings: {
         Row: {
           key: string
-          value: string | null
-          type: 'text' | 'number' | 'json' | 'image' | 'html'
           label: string | null
           sort_order: number
+          type: string
           updated_at: string
+          value: string | null
         }
         Insert: {
           key: string
-          value?: string | null
-          type?: 'text' | 'number' | 'json' | 'image' | 'html'
           label?: string | null
           sort_order?: number
-        }
-        Update: {
+          type?: string
+          updated_at?: string
           value?: string | null
-          type?: 'text' | 'number' | 'json' | 'image' | 'html'
+        }
+        Update: {
+          key?: string
           label?: string | null
-        }
-        Relationships: []
-      }
-      media: {
-        Row: {
-          id: string
-          file_name: string
-          file_url: string
-          file_type: string | null
-          file_size: number | null
-          alt_text: string | null
-          uploaded_by: string | null
-          created_at: string
-        }
-        Insert: {
-          file_name: string
-          file_url: string
-          file_type?: string | null
-          file_size?: number | null
-          alt_text?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          file_name?: string
-          alt_text?: string | null
-        }
-        Relationships: []
-      }
-      activity_logs: {
-        Row: {
-          id: string
-          user_id: string | null
-          user_email: string | null
-          action: string
-          entity_type: string
-          entity_id: string | null
-          entity_title: string | null
-          details: Record<string, unknown> | null
-          created_at: string
-        }
-        Insert: {
-          user_id?: string | null
-          user_email?: string | null
-          action: string
-          entity_type: string
-          entity_id?: string | null
-          entity_title?: string | null
-          details?: Record<string, unknown> | null
-        }
-        Update: {
-          action?: string
-          entity_type?: string
-          entity_id?: string | null
-          entity_title?: string | null
-          details?: Record<string, unknown> | null
+          sort_order?: number
+          type?: string
+          updated_at?: string
+          value?: string | null
         }
         Relationships: []
       }
@@ -445,7 +655,7 @@ export type Database = {
     Functions: {
       generate_slug: { Args: { title: string }; Returns: string }
       increment_download: { Args: { doc_id: string }; Returns: undefined }
-      is_admin: { Args: Record<string, never>; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -456,17 +666,125 @@ export type Database = {
   }
 }
 
-// Convenience types
-export type Profile = Database['public']['Tables']['profiles']['Row']
-export type Project = Database['public']['Tables']['projects']['Row']
-export type Post = Database['public']['Tables']['posts']['Row']
-export type Page = Database['public']['Tables']['pages']['Row']
-export type PageSection = Database['public']['Tables']['page_sections']['Row']
-export type Contact = Database['public']['Tables']['contacts']['Row']
-export type Document = Database['public']['Tables']['documents']['Row']
-export type SiteSetting = Database['public']['Tables']['site_settings']['Row']
-export type Media = Database['public']['Tables']['media']['Row']
-export type ProjectCategory = Database['public']['Tables']['project_categories']['Row']
-export type PostCategory = Database['public']['Tables']['post_categories']['Row']
-export type NavigationItem = Database['public']['Tables']['navigation_items']['Row']
-export type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

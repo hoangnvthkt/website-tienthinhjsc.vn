@@ -201,3 +201,79 @@ function getTagColor(tag) {
   }
   return map[tag] || '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')
 }
+
+/**
+ * Fetch page sections for a given page slug from Supabase
+ * Used by the dynamic section renderer in main.js
+ */
+export async function fetchPageSections(pageSlug) {
+  const cacheKey = `page_sections_${pageSlug}`
+  if (cache[cacheKey]) return cache[cacheKey]
+
+  try {
+    // First get the page by slug
+    const { data: pageData, error: pageError } = await supabase
+      .from('pages')
+      .select('id')
+      .eq('slug', pageSlug)
+      .single()
+
+    if (pageError || !pageData) {
+      console.warn(`No page found for slug: ${pageSlug}`)
+      return []
+    }
+
+    // Fetch sections for that page, ordered by sort_order
+    const { data: sections, error: sectionsError } = await supabase
+      .from('page_sections')
+      .select('*')
+      .eq('page_id', pageData.id)
+      .eq('is_visible', true)
+      .order('sort_order', { ascending: true })
+
+    if (sectionsError || !sections?.length) {
+      console.warn(`No sections for page: ${pageSlug}`)
+      return []
+    }
+
+    cache[cacheKey] = sections
+    return sections
+  } catch {
+    console.warn('Failed to fetch page sections')
+    return []
+  }
+}
+
+/**
+ * Fetch featured projects for the dynamic featured_projects section
+ * Returns a limited number of featured/published projects
+ */
+export async function fetchFeaturedProjects(count = 6) {
+  const cacheKey = `featured_projects_${count}`
+  if (cache[cacheKey]) return cache[cacheKey]
+
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('id, title, subtitle, featured_image, images, project_categories(name)')
+      .eq('status', 'published')
+      .order('is_featured', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .limit(count)
+
+    if (error || !data?.length) return []
+
+    const mapped = data.map(p => ({
+      id: p.id,
+      title: p.title,
+      subtitle: p.subtitle || '',
+      category: p.project_categories?.name || 'Dự án',
+      image: p.featured_image || (Array.isArray(p.images) ? p.images[0] : '') || '/images/steel-warehouse.png',
+    }))
+
+    cache[cacheKey] = mapped
+    return mapped
+  } catch {
+    return []
+  }
+}

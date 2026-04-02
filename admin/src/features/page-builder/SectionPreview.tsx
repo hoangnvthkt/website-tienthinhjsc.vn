@@ -35,6 +35,10 @@ export default function SectionPreview({ section, compact = false }: SectionPrev
     case 'video': return <VideoPreview section={section} config={config} />
     case 'contact_form': return <ContactFormPreview section={section} />
     case 'divider': return <DividerPreview config={config} />
+    case 'featured_projects': return <FeaturedProjectsPreview section={section} config={config} />
+    case 'partners': return <PartnersPreview section={section} config={config} />
+    case 'timeline': return <TimelinePreview section={section} config={config} />
+    case 'team': return <TeamPreview section={section} config={config} />
     default:
       return (
         <div className="p-6 text-center text-gray-400 text-sm">
@@ -315,3 +319,131 @@ function DividerPreview({ config }: { config: Record<string, unknown> }) {
     </div>
   )
 }
+
+function FeaturedProjectsPreview({ section, config }: { section: SectionData; config: Record<string, unknown> }) {
+  const count = (config.count as number) || 6
+  const displayMode = (config.display_mode as string) || 'grid'
+  const showCat = config.show_category !== false
+
+  return (
+    <div className="py-8 px-6">
+      {section.title && <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">{section.title}</h3>}
+      {section.subtitle && <p className="text-gray-500 text-sm text-center mb-6">{section.subtitle}</p>}
+      <div className={displayMode === 'slider' ? 'flex gap-4 overflow-x-auto pb-2' : 'grid grid-cols-3 gap-4'}>
+        {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
+          <div key={i} className={`rounded-xl overflow-hidden border border-gray-100 bg-gray-50 ${displayMode === 'slider' ? 'min-w-[220px] shrink-0' : ''}`}>
+            <div className="aspect-[16/10] bg-gradient-to-br from-gray-200 to-gray-300 relative flex items-center justify-center">
+              <span className="text-3xl opacity-40">🏗️</span>
+              {showCat && (
+                <span className="absolute top-2 left-2 bg-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full text-gray-600">
+                  Dự án {i + 1}
+                </span>
+              )}
+            </div>
+            <div className="p-3">
+              <div className="h-3 bg-gray-200 rounded w-3/4 mb-1.5" />
+              <div className="h-2 bg-gray-100 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-[10px] text-gray-400 mt-3 italic">Dự án sẽ tự động tải từ cơ sở dữ liệu</p>
+    </div>
+  )
+}
+
+function PartnersPreview({ section, config }: { section: SectionData; config: Record<string, unknown> }) {
+  const cols = parseInt(config.columns as string) || 5
+  const grayscale = config.grayscale !== false
+  const logos = (section.media_urls?.length || 0) > 0 ? section.media_urls : null
+
+  return (
+    <div className="py-8 px-6">
+      {section.title && <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{section.title}</h3>}
+      <div className="grid gap-6 items-center justify-items-center" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        {logos ? logos.map((url, i) => (
+          <div key={i} className="h-12 flex items-center justify-center">
+            <img src={url} alt="" className={`max-h-full max-w-full object-contain ${grayscale ? 'grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300' : ''}`} />
+          </div>
+        )) : Array.from({ length: cols }).map((_, i) => (
+          <div key={i} className={`w-20 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center ${grayscale ? 'grayscale' : ''}`}>
+            <span className="text-xs text-gray-300 font-bold">LOGO</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TimelinePreview({ section, config }: { section: SectionData; config: Record<string, unknown> }) {
+  const items = (config.items as Array<{ icon?: string; title: string; description: string }>) || []
+  const layout = (config.layout as string) || 'left'
+
+  return (
+    <div className="py-8 px-6">
+      {section.title && <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{section.title}</h3>}
+      <div className={`relative max-w-xl mx-auto ${layout === 'alternate' ? 'max-w-2xl' : ''}`}>
+        {/* Vertical line */}
+        <div className={`absolute ${layout === 'alternate' ? 'left-1/2' : 'left-4'} top-0 bottom-0 w-0.5 bg-gray-200`} />
+
+        {items.length > 0 ? items.map((item, i) => (
+          <div key={i} className={`relative pl-10 pb-6 last:pb-0 ${layout === 'alternate' && i % 2 === 1 ? 'ml-[50%] pl-10' : layout === 'alternate' ? 'mr-[50%] pr-10 pl-10' : ''}`}>
+            {/* Dot */}
+            <div className={`absolute ${layout === 'alternate' ? (i % 2 === 0 ? 'left-[calc(100%+8px)]' : 'left-[-8px]') : 'left-2.5'} top-1 w-3 h-3 rounded-full bg-primary border-2 border-white shadow-sm`} />
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm">{item.icon || '📌'}</span>
+                <p className="text-sm font-semibold text-gray-700">{item.title}</p>
+              </div>
+              <p className="text-xs text-gray-500">{item.description}</p>
+            </div>
+          </div>
+        )) : (
+          <>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="relative pl-10 pb-6 last:pb-0">
+                <div className="absolute left-2.5 top-1 w-3 h-3 rounded-full bg-primary border-2 border-white shadow-sm" />
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                  <div className="h-3 bg-gray-200 rounded w-24 mb-2" />
+                  <div className="h-2 bg-gray-100 rounded w-full" />
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TeamPreview({ section, config }: { section: SectionData; config: Record<string, unknown> }) {
+  const items = (config.items as Array<{ icon?: string; title: string; description: string }>) || []
+  const cols = parseInt(config.columns as string) || 3
+
+  return (
+    <div className="py-8 px-6">
+      {section.title && <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">{section.title}</h3>}
+      {section.subtitle && <p className="text-gray-500 text-sm text-center mb-6">{section.subtitle}</p>}
+      <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(cols, items.length || cols)}, 1fr)` }}>
+        {items.length > 0 ? items.map((item, i) => (
+          <div key={i} className="text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 mx-auto mb-3 flex items-center justify-center text-2xl">
+              {item.icon || '👤'}
+            </div>
+            <p className="text-sm font-semibold text-gray-700">{item.title}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+          </div>
+        )) : (
+          [1, 2, 3].map(i => (
+            <div key={i} className="text-center">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 mx-auto mb-3 flex items-center justify-center text-2xl">👤</div>
+              <div className="h-3 bg-gray-200 rounded w-20 mx-auto mb-1.5" />
+              <div className="h-2 bg-gray-100 rounded w-16 mx-auto" />
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+

@@ -12,7 +12,7 @@ export interface SectionTypeConfig {
 export interface SectionField {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'richtext' | 'image' | 'images' | 'color' | 'select' | 'number' | 'toggle' | 'url' | 'icon-text-list'
+  type: 'text' | 'textarea' | 'richtext' | 'image' | 'images' | 'color' | 'select' | 'number' | 'toggle' | 'url' | 'icon-text-list' | 'items-list'
   placeholder?: string
   options?: { value: string; label: string }[]
   required?: boolean
@@ -187,6 +187,67 @@ export const SECTION_TYPES: SectionTypeConfig[] = [
       ], group: 'style' },
       { key: 'spacing', label: 'Khoảng cách', type: 'select', options: [
         { value: 'small', label: 'Nhỏ' }, { value: 'medium', label: 'Vừa' }, { value: 'large', label: 'Lớn' }
+      ], group: 'style' },
+    ]
+  },
+  // ===== NEW GUFRAM-INSPIRED SECTION TYPES =====
+  {
+    type: 'featured_projects',
+    label: 'Dự án nổi bật',
+    icon: '🏗️',
+    description: 'Grid/Slider dự án nổi bật — auto-fetch từ database',
+    defaultConfig: { display_mode: 'grid', count: 6, show_category: true },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Dự án tiêu biểu', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'count', label: 'Số dự án hiển thị', type: 'number', group: 'content' },
+      { key: 'display_mode', label: 'Kiểu hiển thị', type: 'select', options: [
+        { value: 'grid', label: 'Lưới (Grid)' }, { value: 'slider', label: 'Cuộn ngang (Slider)' }
+      ], group: 'style' },
+      { key: 'show_category', label: 'Hiện danh mục', type: 'toggle', group: 'style' },
+    ]
+  },
+  {
+    type: 'partners',
+    label: 'Đối tác / Logo',
+    icon: '🤝',
+    description: 'Grid logo đối tác với hiệu ứng grayscale',
+    defaultConfig: { columns: 5, grayscale: true },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Đối tác chiến lược', group: 'content' },
+      { key: 'logos', label: 'Danh sách logo', type: 'images', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }, { value: '5', label: '5 cột' }, { value: '6', label: '6 cột' }
+      ], group: 'style' },
+      { key: 'grayscale', label: 'Hiệu ứng đen trắng', type: 'toggle', group: 'style' },
+    ]
+  },
+  {
+    type: 'timeline',
+    label: 'Dòng thời gian',
+    icon: '📅',
+    description: 'Timeline dọc với các mốc thời gian — kiểu Gufram Storia',
+    defaultConfig: { layout: 'left' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Hành trình phát triển', group: 'content' },
+      { key: 'items', label: 'Các mốc thời gian', type: 'icon-text-list', group: 'content' },
+      { key: 'layout', label: 'Bố cục', type: 'select', options: [
+        { value: 'left', label: 'Bên trái' }, { value: 'alternate', label: 'Xen kẽ' }, { value: 'split', label: 'Split-screen (ảnh trái, text phải)' }
+      ], group: 'style' },
+    ]
+  },
+  {
+    type: 'team',
+    label: 'Đội ngũ',
+    icon: '👥',
+    description: 'Grid thẻ thành viên đội ngũ với ảnh và thông tin',
+    defaultConfig: { columns: 3 },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Đội ngũ lãnh đạo', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách thành viên', type: 'icon-text-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }
       ], group: 'style' },
     ]
   },

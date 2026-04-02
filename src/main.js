@@ -1,6 +1,6 @@
 import './style.css';
 import { products as staticProducts } from './data.js';
-import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation } from './api.js';
+import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects } from './api.js';
 
 // ============================================
 // APP STATE
@@ -2087,6 +2087,446 @@ async function renderFooterNav() {
 }
 
 // ============================================
+// DYNAMIC SECTION RENDERER
+// Fetches page_sections from Supabase and renders them
+// ============================================
+
+// Map of page slug to its HTML page ID
+const PAGE_SLUG_MAP = {
+  // Giới thiệu
+  'thu-ngo': 'page-about-letter',
+  'tam-nhin-su-menh': 'page-about-vision',
+  'gia-tri-cot-loi': 'page-about-values',
+  'so-do-to-chuc': 'page-about-org',
+  'chung-chi': 'page-about-cert',
+  'giai-thuong': 'page-about-awards',
+  // Năng lực
+  'nang-luc-san-xuat': 'page-cap-prod',
+  'nang-luc-thi-cong': 'page-cap-construct',
+  'an-toan-lao-dong': 'page-cap-safety',
+  // Trang chính
+  'lich-su': 'page-history',
+  'tin-tuc': 'page-news',
+  'lien-he': 'page-contact',
+};
+
+/**
+ * Try to render dynamic sections for a page slug.
+ * Returns true if sections were found and rendered, false otherwise (fallback to static).
+ */
+async function tryRenderDynamicPage(pageSlug) {
+  const sections = await fetchPageSections(pageSlug);
+  if (!sections || sections.length === 0) return false;
+
+  const pageId = PAGE_SLUG_MAP[pageSlug];
+  if (!pageId) return false;
+
+  const pageEl = document.getElementById(pageId);
+  if (!pageEl) return false;
+
+  // Clear existing static content and render dynamic sections
+  const dynamicContainer = document.createElement('div');
+  dynamicContainer.className = 'dynamic-page';
+  dynamicContainer.setAttribute('data-slug', pageSlug);
+
+  for (const section of sections) {
+    const sectionEl = await renderSection(section);
+    if (sectionEl) {
+      dynamicContainer.appendChild(sectionEl);
+    }
+  }
+
+  // Keep existing static content as fallback, add dynamic at top
+  const existingContent = pageEl.innerHTML;
+  pageEl.innerHTML = '';
+  pageEl.appendChild(dynamicContainer);
+
+  // Setup scroll reveal for new sections
+  setTimeout(() => {
+    dynamicContainer.querySelectorAll('.dynamic-section[data-reveal]').forEach(el => {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('revealed');
+          observer.disconnect();
+        }
+      }, { threshold: 0.1 });
+      observer.observe(el);
+    });
+  }, 100);
+
+  return true;
+}
+
+/**
+ * Render a single section based on its type
+ */
+async function renderSection(section) {
+  const { section_type, title, content, media_urls, config } = section;
+  const cfg = config || {};
+  // Normalize: add media_url shorthand (first item from media_urls array)
+  section._media_url = Array.isArray(media_urls) && media_urls.length > 0 ? media_urls[0] : null;
+
+  const renderers = {
+    hero: renderHeroSection,
+    text: renderTextSection,
+    image_gallery: renderGallerySection,
+    features: renderFeaturesSection,
+    stats: renderStatsSection,
+    cta: renderCtaSection,
+    testimonial: renderTestimonialSection,
+    faq: renderFaqSection,
+    video: renderVideoSection,
+    contact_form: renderContactFormSection,
+    divider: renderDividerSection,
+    featured_projects: renderFeaturedProjectsSection,
+    partners: renderPartnersSection,
+    timeline: renderTimelineSection,
+    team: renderTeamSection,
+  };
+
+  const renderer = renderers[section_type];
+  if (!renderer) {
+    console.warn(`Unknown section type: ${section_type}`);
+    return null;
+  }
+
+  return await renderer(section);
+}
+
+// === Section Render Functions ===
+
+function renderHeroSection({ title, content, media_urls, _media_url, config }) {
+  const cfg = config || {};
+  const bgUrl = _media_url || (cfg.background_image) || null;
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-hero';
+  el.setAttribute('data-reveal', '');
+  if (bgUrl) el.style.setProperty('--hero-bg', `url(${bgUrl})`);
+
+  el.innerHTML = `
+    <div class="dynamic-hero__overlay"></div>
+    <div class="dynamic-hero__content">
+      ${title ? `<h1 class="dynamic-hero__title">${title}</h1>` : ''}
+      ${content ? `<p class="dynamic-hero__subtitle">${content}</p>` : ''}
+      ${cfg.cta_text ? `<a href="${cfg.cta_url || '#'}" class="dynamic-cta__btn" style="margin-top:2rem;color:#fff;border-color:rgba(255,255,255,0.5);">${cfg.cta_text}</a>` : ''}
+    </div>
+  `;
+  return el;
+}
+
+function renderTextSection({ title, content }) {
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-text';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-text__body">${content || ''}</div>
+  `;
+  return el;
+}
+
+function renderGallerySection({ title, media_urls, config }) {
+  const cfg = config || {};
+  const images = (cfg.media_urls || media_urls || []);
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-gallery';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-gallery__grid">
+      ${images.map(img => `
+        <div class="dynamic-gallery__item">
+          <img src="${img}" alt="" loading="lazy">
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+function renderFeaturesSection({ title, content, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-features';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${content ? `<p style="text-align:center;max-width:600px;margin:0 auto 3rem;color:var(--color-text-muted);">${content}</p>` : ''}
+    <div class="dynamic-features__grid">
+      ${items.map(item => `
+        <div class="dynamic-features__item">
+          ${item.icon ? `<div class="dynamic-features__icon">${item.icon}</div>` : ''}
+          <h3>${item.title || item.text || ''}</h3>
+          <p>${item.description || item.subtitle || ''}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+function renderStatsSection({ title, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-stats';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-stats__grid">
+      ${items.map(item => `
+        <div class="dynamic-stats__item">
+          <div class="dynamic-stats__number">${item.icon || item.title || ''}</div>
+          <div class="dynamic-stats__label">${item.text || item.description || ''}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+function renderCtaSection({ title, content, config }) {
+  const cfg = config || {};
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-cta';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${content ? `<p>${content}</p>` : ''}
+    ${cfg.cta_text ? `<a href="${cfg.cta_url || '#'}" class="dynamic-cta__btn">${cfg.cta_text}</a>` : ''}
+  `;
+  return el;
+}
+
+function renderTestimonialSection({ title, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-testimonial';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${items.map(item => `
+      <div class="dynamic-testimonial__item">
+        <p class="dynamic-testimonial__quote">"${item.text || item.title || ''}"</p>
+        <div class="dynamic-testimonial__author">${item.icon || item.subtitle || ''}</div>
+        <div class="dynamic-testimonial__role">${item.description || ''}</div>
+      </div>
+    `).join('')}
+  `;
+  return el;
+}
+
+function renderFaqSection({ title, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-faq';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${items.map(item => `
+      <div class="dynamic-faq__item">
+        <button class="dynamic-faq__question">
+          <span>${item.title || item.text || ''}</span>
+          <span>+</span>
+        </button>
+        <div class="dynamic-faq__answer">${item.description || item.subtitle || ''}</div>
+      </div>
+    `).join('')}
+  `;
+
+  // Attach click handlers for accordion
+  el.querySelectorAll('.dynamic-faq__question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.dynamic-faq__item');
+      item.classList.toggle('open');
+      const icon = btn.querySelector('span:last-child');
+      icon.textContent = item.classList.contains('open') ? '−' : '+';
+    });
+  });
+
+  return el;
+}
+
+function renderVideoSection({ title, content, config }) {
+  const cfg = config || {};
+  const videoUrl = cfg.video_url || '';
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-video';
+  el.setAttribute('data-reveal', '');
+
+  // Convert YouTube URL to embed format
+  let embedUrl = videoUrl;
+  const ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+  if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-video__wrapper">
+      <iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe>
+    </div>
+    ${content ? `<p style="text-align:center;margin-top:1rem;color:var(--color-text-muted);">${content}</p>` : ''}
+  `;
+  return el;
+}
+
+function renderContactFormSection({ title, content }) {
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-contact';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${content ? `<p style="text-align:center;margin-bottom:2rem;color:var(--color-text-muted);">${content}</p>` : ''}
+    <form class="dynamic-contact__form" id="dynamicContactForm">
+      <div class="dynamic-contact__field">
+        <label>Họ và tên</label>
+        <input type="text" name="full_name" required placeholder="Nhập họ tên...">
+      </div>
+      <div class="dynamic-contact__field">
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="email@example.com">
+      </div>
+      <div class="dynamic-contact__field">
+        <label>Số điện thoại</label>
+        <input type="tel" name="phone" placeholder="0901 234 567">
+      </div>
+      <div class="dynamic-contact__field">
+        <label>Nội dung</label>
+        <textarea name="message" required placeholder="Nội dung liên hệ..."></textarea>
+      </div>
+      <button type="submit" class="dynamic-contact__submit">Gửi liên hệ</button>
+    </form>
+  `;
+
+  // Attach form submit handler
+  const form = el.querySelector('#dynamicContactForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    const result = await submitContact(data);
+    if (result) {
+      form.innerHTML = '<p style="text-align:center;padding:3rem;font-weight:600;">✓ Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.</p>';
+    }
+  });
+
+  return el;
+}
+
+function renderDividerSection({ config }) {
+  const cfg = config || {};
+  const el = document.createElement('div');
+  el.className = `dynamic-section dynamic-divider${cfg.style === 'thick' ? ' dynamic-divider--thick' : ''}${cfg.spacing === 'large' ? ' dynamic-divider--spaced' : ''}`;
+  return el;
+}
+
+async function renderFeaturedProjectsSection({ title, content, config }) {
+  const cfg = config || {};
+  const count = cfg.count || 6;
+  const displayMode = cfg.display_mode || 'grid';
+  const projects = await fetchFeaturedProjects(count);
+
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-projects';
+  el.setAttribute('data-reveal', '');
+
+  const cardsHTML = projects.map(p => `
+    <div class="dynamic-projects__card" data-project-id="${p.id}">
+      <img src="${p.image}" alt="${p.title}" loading="lazy">
+      <div class="dynamic-projects__card-info">
+        <div class="dynamic-projects__card-title">${p.title}</div>
+        ${cfg.show_category !== false ? `<div class="dynamic-projects__card-category">${p.category}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${content ? `<p style="text-align:center;max-width:600px;margin:-1rem auto 3rem;color:var(--color-text-muted);">${content}</p>` : ''}
+    <div class="${displayMode === 'slider' ? 'dynamic-projects__slider' : 'dynamic-projects__grid'}">
+      ${cardsHTML}
+    </div>
+  `;
+
+  // Click handler for project cards
+  el.querySelectorAll('.dynamic-projects__card').forEach(card => {
+    card.addEventListener('click', () => {
+      const projectId = card.dataset.projectId;
+      const product = products.find(p => p.id === projectId);
+      if (product) navigateTo('product', product);
+    });
+  });
+
+  return el;
+}
+
+function renderPartnersSection({ title, config }) {
+  const cfg = config || {};
+  const logos = cfg.logos || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-partners';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-partners__grid">
+      ${logos.map(logo => `
+        <div class="dynamic-partners__item">
+          <img src="${logo}" alt="Partner" loading="lazy">
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+function renderTimelineSection({ title, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-timeline';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    <div class="dynamic-timeline__line">
+      ${items.map(item => `
+        <div class="dynamic-timeline__item">
+          <div class="dynamic-timeline__dot"></div>
+          <div class="dynamic-timeline__year">${item.icon || ''}</div>
+          <h3>${item.title || item.text || ''}</h3>
+          <p>${item.description || item.subtitle || ''}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+function renderTeamSection({ title, content, config }) {
+  const cfg = config || {};
+  const items = cfg.items || [];
+  const el = document.createElement('section');
+  el.className = 'dynamic-section dynamic-team';
+  el.setAttribute('data-reveal', '');
+  el.innerHTML = `
+    ${title ? `<h2>${title}</h2>` : ''}
+    ${content ? `<p style="text-align:center;max-width:600px;margin:-1rem auto 3rem;color:var(--color-text-muted);">${content}</p>` : ''}
+    <div class="dynamic-team__grid">
+      ${items.map(item => `
+        <div class="dynamic-team__card">
+          ${item.icon ? `<img src="${item.icon}" class="dynamic-team__avatar" alt="${item.title || ''}">` : ''}
+          <div class="dynamic-team__name">${item.title || item.text || ''}</div>
+          <div class="dynamic-team__role">${item.subtitle || ''}</div>
+          <div class="dynamic-team__bio">${item.description || ''}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return el;
+}
+
+// ============================================
 // INIT
 // ============================================
 async function init() {
@@ -2132,6 +2572,14 @@ async function init() {
   renderOtherProjectPages();
   renderNewsSubpages();
   applySettings();
+
+  // Try to load dynamic sections for subpages (replaces static if found)
+  const dynamicSlugs = Object.keys(PAGE_SLUG_MAP);
+  for (const slug of dynamicSlugs) {
+    tryRenderDynamicPage(slug).then(loaded => {
+      if (loaded) console.log(`✅ Dynamic page loaded: ${slug}`);
+    });
+  }
 
   // Enhanced lazy-loading after initial render
   setTimeout(() => setupLazyImages(), 500);
