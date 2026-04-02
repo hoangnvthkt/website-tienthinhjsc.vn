@@ -4,7 +4,8 @@ import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, GripVertical,
   Copy, ChevronUp, ChevronDown, X, Plus, Sparkles,
   Undo2, Redo2, PanelLeftClose, PanelLeftOpen,
-  Bookmark, BookmarkPlus, LayoutGrid, Keyboard, Wand2
+  Bookmark, BookmarkPlus, LayoutGrid, Keyboard, Wand2,
+  Columns, GripHorizontal
 } from 'lucide-react'
 import {
   DndContext,
@@ -49,6 +50,38 @@ interface SectionData {
   sort_order: number
   is_visible: boolean
   is_new?: boolean
+  col_span: number // 1-12, default 12 (full width)
+}
+
+// Column width presets for the Inspector
+const COL_SPAN_OPTIONS = [
+  { value: 12, label: 'Full (100%)', icon: '████████████' },
+  { value: 9, label: '3/4 (75%)', icon: '█████████░░░' },
+  { value: 8, label: '2/3 (66%)', icon: '████████░░░░' },
+  { value: 6, label: '1/2 (50%)', icon: '██████░░░░░░' },
+  { value: 4, label: '1/3 (33%)', icon: '████░░░░░░░░' },
+  { value: 3, label: '1/4 (25%)', icon: '███░░░░░░░░░' },
+]
+
+// Helper: group sections into rows based on col_span
+function groupIntoRows(sections: SectionData[]): SectionData[][] {
+  const rows: SectionData[][] = []
+  let currentRow: SectionData[] = []
+  let currentSpan = 0
+
+  for (const section of sections) {
+    const span = section.col_span || 12
+    if (currentSpan + span > 12 && currentRow.length > 0) {
+      rows.push(currentRow)
+      currentRow = [section]
+      currentSpan = span
+    } else {
+      currentRow.push(section)
+      currentSpan += span
+    }
+  }
+  if (currentRow.length > 0) rows.push(currentRow)
+  return rows
 }
 
 interface SectionTemplate {
@@ -60,6 +93,69 @@ interface SectionTemplate {
   content: string | null
   media_urls: string[]
   created_at: string
+}
+
+// ============================================
+// Resize Handle between adjacent columns
+// ============================================
+function ResizeHandle({ leftSection, rightSection, onResize }: {
+  leftSection: SectionData
+  rightSection: SectionData
+  onResize: (leftSpan: number, rightSpan: number) => void
+}) {
+  const handleRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+
+    const totalSpan = (leftSection.col_span || 12) + (rightSection.col_span || 12)
+    const parentRow = handleRef.current?.closest('[style*="grid-template-columns"]') as HTMLElement | null
+    if (!parentRow) return
+
+    const startX = e.clientX
+    const rowRect = parentRow.getBoundingClientRect()
+    const colWidth = rowRect.width / 12
+
+    const handleMouseMove = (moveE: MouseEvent) => {
+      const deltaX = moveE.clientX - startX
+      const deltaCols = Math.round(deltaX / colWidth)
+      const newLeft = Math.max(1, Math.min(totalSpan - 1, (leftSection.col_span || 12) + deltaCols))
+      const newRight = totalSpan - newLeft
+      if (newLeft >= 1 && newRight >= 1 && newLeft <= 11 && newRight <= 11) {
+        onResize(newLeft, newRight)
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+  }, [leftSection.col_span, rightSection.col_span, onResize])
+
+  return (
+    <div
+      ref={handleRef}
+      onMouseDown={handleMouseDown}
+      className={`absolute top-0 right-0 bottom-0 w-3 z-30 cursor-col-resize group flex items-center justify-center
+        ${isDragging ? 'bg-primary/20' : 'hover:bg-primary/10'}`}
+      style={{ transform: 'translateX(50%)' }}
+    >
+      <div className={`w-1 h-12 rounded-full transition-all ${
+        isDragging ? 'bg-primary scale-y-110' : 'bg-gray-300 group-hover:bg-primary/60'
+      }`} />
+    </div>
+  )
 }
 
 // ============================================
@@ -142,6 +238,7 @@ function SortableSection({
       {/* Section Card */}
       <div
         onClick={onSelect}
+        onDoubleClick={(e) => { e.stopPropagation(); onSelect(); }}
         className={`relative rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${
           isSelected
             ? 'border-primary shadow-lg shadow-primary/10 ring-1 ring-primary/20'
@@ -347,6 +444,7 @@ export default function PageBuilderPage() {
         ...s,
         config: (typeof s.config === 'object' && s.config !== null ? s.config : {}) as Record<string, unknown>,
         media_urls: Array.isArray(s.media_urls) ? s.media_urls as string[] : [],
+        col_span: typeof s.col_span === 'number' ? s.col_span : 12,
       }))
       setSections(loaded)
       resetHistory()
@@ -380,6 +478,7 @@ export default function PageBuilderPage() {
       sort_order: 0,
       is_visible: true,
       is_new: true,
+      col_span: 12,
     }
 
     setSections(prev => {
@@ -404,6 +503,7 @@ export default function PageBuilderPage() {
       sort_order: 0,
       is_visible: true,
       is_new: true,
+      col_span: 12,
     }
 
     setSections(prev => {
@@ -537,6 +637,7 @@ export default function PageBuilderPage() {
           media_urls: s.media_urls,
           sort_order: i,
           is_visible: s.is_visible,
+          col_span: s.col_span || 12,
         }
         if (s.is_new) {
           const { data } = await (supabase.from('page_sections') as any).insert(payload).select('id').single()
@@ -732,24 +833,55 @@ export default function PageBuilderPage() {
                 {sections.length > 0 ? (
                   <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
                     <div className="divide-y divide-gray-100">
-                      {sections.map((section, idx) => (
-                        <SortableSection
-                          key={section.id}
-                          section={section}
-                          isSelected={selectedId === section.id}
-                          onSelect={() => { setSelectedId(section.id); }}
-                          onDelete={() => setDeleteTarget(section.id)}
-                          onDuplicate={() => duplicateSection(section.id)}
-                          onToggleVisibility={() => toggleVisibility(section.id)}
-                          onMoveUp={() => moveSection(idx, -1)}
-                          onMoveDown={() => moveSection(idx, 1)}
-                          onUpdateTitle={(title) => updateSection(section.id, 'title', title)}
-                          isFirst={idx === 0}
-                          isLast={idx === sections.length - 1}
-                          onInsertBefore={() => setInsertAtIndex(idx)}
-                          onInsertAfter={() => setInsertAtIndex(idx + 1)}
-                        />
-                      ))}
+                      {(() => {
+                        const rows = groupIntoRows(sections)
+                        return rows.map((row, rowIdx) => (
+                          <div key={`row-${rowIdx}`} className="relative">
+                            <div
+                              className="grid gap-0"
+                              style={{ gridTemplateColumns: 'repeat(12, 1fr)' }}
+                            >
+                              {row.map((section, colIdx) => {
+                                const globalIdx = sections.findIndex(s => s.id === section.id)
+                                return (
+                                  <div
+                                    key={section.id}
+                                    className="relative"
+                                    style={{ gridColumn: `span ${section.col_span || 12}` }}
+                                  >
+                                    <SortableSection
+                                      section={section}
+                                      isSelected={selectedId === section.id}
+                                      onSelect={() => { setSelectedId(section.id); }}
+                                      onDelete={() => setDeleteTarget(section.id)}
+                                      onDuplicate={() => duplicateSection(section.id)}
+                                      onToggleVisibility={() => toggleVisibility(section.id)}
+                                      onMoveUp={() => moveSection(globalIdx, -1)}
+                                      onMoveDown={() => moveSection(globalIdx, 1)}
+                                      onUpdateTitle={(title) => updateSection(section.id, 'title', title)}
+                                      isFirst={globalIdx === 0}
+                                      isLast={globalIdx === sections.length - 1}
+                                      onInsertBefore={() => setInsertAtIndex(globalIdx)}
+                                      onInsertAfter={() => setInsertAtIndex(globalIdx + 1)}
+                                    />
+                                    {/* Resize Handle between columns */}
+                                    {colIdx < row.length - 1 && (
+                                      <ResizeHandle
+                                        leftSection={section}
+                                        rightSection={row[colIdx + 1]}
+                                        onResize={(leftSpan, rightSpan) => {
+                                          updateSection(section.id, 'col_span', leftSpan)
+                                          updateSection(row[colIdx + 1].id, 'col_span', rightSpan)
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ))
+                      })()}
                     </div>
                   </SortableContext>
                 ) : (
@@ -849,6 +981,30 @@ export default function PageBuilderPage() {
 
             {/* Inspector Body */}
             <div className="flex-1 overflow-y-auto p-4">
+              {/* Column Width Selector */}
+              <div className="mb-4 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Columns size={14} className="text-gray-400" />
+                  <label className="text-xs font-semibold text-gray-600">Chiều rộng</label>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {COL_SPAN_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => updateSection(selectedSection.id, 'col_span', opt.value)}
+                      className={`px-2 py-1.5 rounded-lg text-[10px] font-medium border transition-all text-center ${
+                        (selectedSection.col_span || 12) === opt.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <div className="font-mono text-[8px] tracking-tighter mb-0.5 leading-none">{opt.icon}</div>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <SectionEditor
                 fields={selectedType.fields}
                 data={selectedSection as unknown as Record<string, unknown>}
