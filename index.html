@@ -509,47 +509,10 @@
           <h1 class="content-page__title">Tin Tức</h1>
           <p class="content-page__intro">Cập nhật thông tin mới nhất về hoạt động, dự án và các sự kiện của Tiến Thịnh JSC.</p>
         </div>
-        <div class="news-grid" id="newsGrid">
-          <article class="news-card">
-            <div class="news-card__img">
-              <img src="/images/factory-interior.png" alt="Mở rộng xưởng" loading="lazy" />
-            </div>
-            <div class="news-card__content">
-              <span class="news-card__date">15/03/2024</span>
-              <h3 class="news-card__title">Khánh thành xưởng sản xuất mới 20.000m²</h3>
-              <p class="news-card__excerpt">Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức...</p>
-            </div>
-          </article>
-          <article class="news-card">
-            <div class="news-card__img">
-              <img src="/images/construction-team.png" alt="Đội ngũ" loading="lazy" />
-            </div>
-            <div class="news-card__content">
-              <span class="news-card__date">28/01/2024</span>
-              <h3 class="news-card__title">Tuyển dụng 50 kỹ sư và thợ hàn lành nghề</h3>
-              <p class="news-card__excerpt">Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế...</p>
-            </div>
-          </article>
-          <article class="news-card">
-            <div class="news-card__img">
-              <img src="/images/steel-roof-structure.png" alt="Dự án mới" loading="lazy" />
-            </div>
-            <div class="news-card__content">
-              <span class="news-card__date">10/12/2023</span>
-              <h3 class="news-card__title">Ký hợp đồng dự án nhà máy LG Display — Hải Phòng</h3>
-              <p class="news-card__excerpt">Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép...</p>
-            </div>
-          </article>
-          <article class="news-card">
-            <div class="news-card__img">
-              <img src="/images/steel-structure-detail.png" alt="Chứng nhận" loading="lazy" />
-            </div>
-            <div class="news-card__content">
-              <span class="news-card__date">05/09/2023</span>
-              <h3 class="news-card__title">Đạt chứng nhận ISO 14001:2015 về Môi trường</h3>
-              <p class="news-card__excerpt">Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững...</p>
-            </div>
-          </article>
+        <div class="news-section" id="newsSection">
+          <!-- Featured article + grid will be populated by JS -->
+          <div id="newsFeatured"></div>
+          <div class="news-grid" id="newsGrid"></div>
         </div>
       </div>
     </main>
@@ -981,6 +944,15 @@
         </div>
         <div class="subpage-content">
           <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Page: Post Detail -->
+    <main class="page page--subpage page--post-detail" id="page-post-detail">
+      <div class="content-page">
+        <div class="post-detail" id="postDetailContent">
+          <!-- Dynamically rendered by JS -->
         </div>
       </div>
     </main>

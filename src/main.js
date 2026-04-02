@@ -91,6 +91,12 @@ function navigateTo(page, data = null) {
     viewToggle.style.display = 'none';
     if (statsBar) statsBar.style.display = 'none';
     if (data) openProduct(data);
+  } else if (page === 'post-detail') {
+    header.style.display = '';
+    viewToggle.style.display = 'none';
+    if (statsBar) statsBar.style.display = 'none';
+    cleanupCube();
+    if (data) renderPostDetail(data);
   } else if (page === 'home') {
     header.style.display = '';
     viewToggle.style.display = '';
@@ -1179,31 +1185,281 @@ function createSkeletonCards(container, count = 6) {
 }
 
 // ============================================
-// DYNAMIC NEWS RENDERING
+// DYNAMIC NEWS RENDERING — Magazine Layout
 // ============================================
+
+// Static fallback posts (used when no DB data)
+const staticPosts = [
+  {
+    id: 'static-1',
+    title: 'Khánh thành xưởng sản xuất mới 20.000m²',
+    excerpt: 'Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức và công suất hàng nghìn tấn thép mỗi năm.',
+    content: '<p>Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức.</p><p>Xưởng mới có diện tích 20.000m² với công nghệ tiên tiến nhất Đông Nam Á, nâng tổng công suất sản xuất lên 30.000 tấn/năm.</p>',
+    featured_image: '/images/factory-interior.png',
+    category: 'Tin công trường',
+    published_at: '2024-03-15T00:00:00Z',
+  },
+  {
+    id: 'static-2',
+    title: 'Tuyển dụng 50 kỹ sư và thợ hàn lành nghề',
+    excerpt: 'Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế.',
+    content: '<p>Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế.</p>',
+    featured_image: '/images/construction-team.png',
+    category: 'Tuyển dụng',
+    published_at: '2024-01-28T00:00:00Z',
+  },
+  {
+    id: 'static-3',
+    title: 'Ký hợp đồng dự án nhà máy LG Display — Hải Phòng',
+    excerpt: 'Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép.',
+    content: '<p>Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép được gia công và lắp dựng trong vòng 8 tháng.</p>',
+    featured_image: '/images/steel-roof-structure.png',
+    category: 'Tin công trường',
+    published_at: '2023-12-10T00:00:00Z',
+  },
+  {
+    id: 'static-4',
+    title: 'Đạt chứng nhận ISO 14001:2015 về Môi trường',
+    excerpt: 'Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững.',
+    content: '<p>Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững và bảo vệ môi trường.</p>',
+    featured_image: '/images/steel-structure-detail.png',
+    category: 'Kiến thức',
+    published_at: '2023-09-05T00:00:00Z',
+  },
+];
+
+// Store all posts for detail page access
+let allPosts = [];
+
 async function renderNews() {
+  const featuredContainer = $('#newsFeatured');
   const newsGrid = $('#newsGrid');
-  if (!newsGrid) return;
+  if (!featuredContainer || !newsGrid) return;
 
-  const posts = await fetchPosts();
-  if (!posts.length) return; // Keep static HTML if no DB posts
+  // Try DB first, fall back to static
+  const dbPosts = await fetchPosts();
+  allPosts = dbPosts.length ? dbPosts : staticPosts;
 
+  const [featured, ...rest] = allPosts;
+
+  // === Featured Article (Split: Gallery Left + Content Right) ===
+  const images = featured.images?.length ? featured.images : [featured.featured_image || '/images/factory-interior.png'];
+  const dateStr = featured.published_at ? new Date(featured.published_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+  featuredContainer.innerHTML = `
+    <div class="news-featured reveal" data-post-id="${featured.id}">
+      <div class="news-featured__gallery">
+        ${images.map((src, i) => `<img src="${src}" alt="${featured.title}" loading="${i === 0 ? 'eager' : 'lazy'}" class="${i === 0 ? 'active' : ''}" />`).join('')}
+        ${images.length > 1 ? `
+          <div class="news-featured__gallery-nav">
+            <button class="news-featured__gallery-btn" data-dir="prev" aria-label="Ảnh trước">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="news-featured__gallery-counter">1 / ${images.length}</span>
+            <button class="news-featured__gallery-btn" data-dir="next" aria-label="Ảnh sau">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+      <div class="news-featured__content">
+        ${featured.category ? `<span class="news-featured__badge">${featured.category}</span>` : ''}
+        <h2 class="news-featured__title">${featured.title}</h2>
+        <p class="news-featured__excerpt">${featured.excerpt || ''}</p>
+        <div class="news-featured__meta">
+          ${dateStr ? `
+            <span class="news-featured__meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              ${dateStr}
+            </span>
+          ` : ''}
+          <span class="news-featured__meta-item">
+            <svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Tiến Thịnh JSC
+          </span>
+        </div>
+        <a class="news-featured__cta" data-post-id="${featured.id}">
+          Đọc bài viết
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  `;
+
+  // Gallery navigation
+  setupGalleryNav(featuredContainer.querySelector('.news-featured__gallery'));
+
+  // Click CTA → post detail
+  featuredContainer.querySelector('.news-featured__cta')?.addEventListener('click', () => {
+    navigateTo('post-detail', featured);
+  });
+  // Click entire featured → post detail
+  featuredContainer.querySelector('.news-featured')?.addEventListener('click', (e) => {
+    if (e.target.closest('.news-featured__gallery-btn') || e.target.closest('.news-featured__cta')) return;
+    navigateTo('post-detail', featured);
+  });
+
+  // === Grid Cards (remaining posts) ===
   newsGrid.innerHTML = '';
-  posts.forEach(post => {
+  rest.forEach(post => {
+    const dateDisplay = post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : '';
     const article = document.createElement('article');
     article.className = 'news-card reveal';
+    article.dataset.postId = post.id;
     article.innerHTML = `
       <div class="news-card__img">
         <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+        ${post.category ? `<span class="news-card__category">${post.category}</span>` : ''}
       </div>
       <div class="news-card__content">
-        <span class="news-card__date">${post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : ''}</span>
+        <span class="news-card__date">${dateDisplay}</span>
         <h3 class="news-card__title">${post.title}</h3>
         <p class="news-card__excerpt">${post.excerpt || ''}</p>
+        <div class="news-card__footer">
+          <span class="news-card__readmore">
+            Đọc thêm
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </span>
+        </div>
       </div>
     `;
+    article.addEventListener('click', () => navigateTo('post-detail', post));
     newsGrid.appendChild(article);
   });
+}
+
+// Gallery navigation helper (reusable)
+function setupGalleryNav(gallery) {
+  if (!gallery) return;
+  const imgs = gallery.querySelectorAll('img');
+  if (imgs.length <= 1) return;
+
+  let current = 0;
+  const counter = gallery.querySelector('.news-featured__gallery-counter, .post-detail__gallery-counter');
+  const update = () => {
+    imgs.forEach((img, i) => img.classList.toggle('active', i === current));
+    if (counter) counter.textContent = `${current + 1} / ${imgs.length}`;
+  };
+
+  gallery.querySelectorAll('[data-dir]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (btn.dataset.dir === 'next') current = (current + 1) % imgs.length;
+      else current = (current - 1 + imgs.length) % imgs.length;
+      update();
+    });
+  });
+}
+
+// ============================================
+// POST DETAIL PAGE
+// ============================================
+function renderPostDetail(post) {
+  const container = $('#postDetailContent');
+  if (!container || !post) return;
+
+  const images = post.images?.length ? post.images : [post.featured_image || '/images/factory-interior.png'];
+  const dateStr = post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+  // Get related posts (same category, exclude current)
+  const related = allPosts.filter(p => p.id !== post.id).slice(0, 4);
+
+  container.innerHTML = `
+    <nav class="post-detail__breadcrumb">
+      <a data-page="news">Tin Tức</a>
+      <span>›</span>
+      ${post.category ? `<a data-page="news">${post.category}</a><span>›</span>` : ''}
+      <span>${post.title}</span>
+    </nav>
+
+    <div class="post-detail__split">
+      <div class="post-detail__gallery">
+        ${images.map((src, i) => `<img src="${src}" alt="${post.title}" class="${i === 0 ? 'active' : ''}" />`).join('')}
+        ${images.length > 1 ? `
+          <div class="post-detail__gallery-nav">
+            <button class="post-detail__gallery-btn" data-dir="prev" aria-label="Ảnh trước">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="post-detail__gallery-counter">1 / ${images.length}</span>
+            <button class="post-detail__gallery-btn" data-dir="next" aria-label="Ảnh sau">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+      <div class="post-detail__header">
+        ${post.category ? `<span class="post-detail__category-badge">${post.category}</span>` : ''}
+        <h1 class="post-detail__title">${post.title}</h1>
+        <div class="post-detail__meta">
+          ${dateStr ? `
+            <span class="post-detail__meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              ${dateStr}
+            </span>
+          ` : ''}
+          <span class="post-detail__meta-item">
+            <svg viewBox="0 0 24 24" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Tiến Thịnh JSC
+          </span>
+        </div>
+        ${post.excerpt ? `<p class="post-detail__excerpt">${post.excerpt}</p>` : ''}
+      </div>
+    </div>
+
+    ${post.content ? `
+      <hr class="post-detail__divider">
+      <div class="post-detail__body">${post.content}</div>
+    ` : ''}
+
+    ${related.length ? `
+      <div class="post-detail__related">
+        <h3 class="post-detail__related-title">Bài viết liên quan</h3>
+        <div class="news-grid">
+          ${related.map(r => {
+            const rDate = r.published_at ? new Date(r.published_at).toLocaleDateString('vi-VN') : '';
+            return `
+              <article class="news-card" data-post-id="${r.id}">
+                <div class="news-card__img">
+                  <img src="${r.featured_image || '/images/factory-interior.png'}" alt="${r.title}" loading="lazy" />
+                  ${r.category ? `<span class="news-card__category">${r.category}</span>` : ''}
+                </div>
+                <div class="news-card__content">
+                  <span class="news-card__date">${rDate}</span>
+                  <h3 class="news-card__title">${r.title}</h3>
+                  <p class="news-card__excerpt">${r.excerpt || ''}</p>
+                  <div class="news-card__footer">
+                    <span class="news-card__readmore">
+                      Đọc thêm
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </span>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+
+  // Setup gallery nav in detail
+  setupGalleryNav(container.querySelector('.post-detail__gallery'));
+
+  // Breadcrumb navigation
+  container.querySelectorAll('.post-detail__breadcrumb a').forEach(a => {
+    a.addEventListener('click', () => navigateTo(a.dataset.page));
+  });
+
+  // Related post clicks
+  container.querySelectorAll('.news-card[data-post-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const p = allPosts.find(x => x.id === card.dataset.postId || x.id?.toString() === card.dataset.postId);
+      if (p) navigateTo('post-detail', p);
+    });
+  });
+
+  // Scroll reveals
+  setTimeout(() => setupScrollReveal(), 50);
 }
 
 // ============================================
@@ -1475,41 +1731,75 @@ async function renderOtherProjectPages() {
 }
 
 // ============================================
-// DYNAMIC SUB-PAGE NEWS — Populate news sub-categories
+// DYNAMIC SUB-PAGE NEWS — Filter by Category
 // ============================================
 async function renderNewsSubpages() {
   const subpages = [
-    { id: 'page-news-site', label: 'Tin Công Trường' },
-    { id: 'page-news-recruit', label: 'Tin Tuyển Dụng' },
-    { id: 'page-news-knowledge', label: 'Kiến Thức Chuyên Môn' },
+    { id: 'page-news-site', label: 'Tin Công Trường', category: 'Tin công trường' },
+    { id: 'page-news-recruit', label: 'Tin Tuyển Dụng', category: 'Tuyển dụng' },
+    { id: 'page-news-knowledge', label: 'Kiến Thức Chuyên Môn', category: 'Kiến thức' },
   ];
 
-  const posts = await fetchPosts();
-  if (!posts.length) return;
+  // Use allPosts (loaded by renderNews) or fetch fresh
+  if (!allPosts.length) {
+    const dbPosts = await fetchPosts();
+    allPosts = dbPosts.length ? dbPosts : staticPosts;
+  }
 
-  subpages.forEach(({ id }) => {
+  subpages.forEach(({ id, label, category }) => {
     const container = document.querySelector(`#${id} .subpage-content`);
     if (!container) return;
 
-    // Show latest posts for all news sub-pages
-    if (posts.length) {
+    // Filter posts by category
+    const filtered = allPosts.filter(p =>
+      p.category?.toLowerCase().includes(category.toLowerCase())
+    );
+
+    if (!filtered.length) {
       container.innerHTML = `
-        <div class="news-grid">
-          ${posts.slice(0, 4).map(post => `
-            <article class="news-card reveal">
-              <div class="news-card__img">
-                <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
-              </div>
-              <div class="news-card__content">
-                <span class="news-card__date">${post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : ''}</span>
-                <h3 class="news-card__title">${post.title}</h3>
-                <p class="news-card__excerpt">${post.excerpt || ''}</p>
-              </div>
-            </article>
-          `).join('')}
+        <div class="news-empty-state">
+          <div class="news-empty-state__icon">📰</div>
+          <h3 class="news-empty-state__title">Chưa có bài viết trong mục "${label}"</h3>
+          <p class="news-empty-state__desc">Nội dung sẽ sớm được cập nhật. Vui lòng quay lại sau.</p>
         </div>
       `;
+      return;
     }
+
+    container.innerHTML = `
+      <div class="news-grid">
+        ${filtered.map(post => {
+          const dateDisplay = post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : '';
+          return `
+            <article class="news-card reveal" data-post-id="${post.id}">
+              <div class="news-card__img">
+                <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+                ${post.category ? `<span class="news-card__category">${post.category}</span>` : ''}
+              </div>
+              <div class="news-card__content">
+                <span class="news-card__date">${dateDisplay}</span>
+                <h3 class="news-card__title">${post.title}</h3>
+                <p class="news-card__excerpt">${post.excerpt || ''}</p>
+                <div class="news-card__footer">
+                  <span class="news-card__readmore">
+                    Đọc thêm
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  </span>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    // Click → post detail
+    container.querySelectorAll('.news-card[data-post-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const p = allPosts.find(x => x.id === card.dataset.postId || x.id?.toString() === card.dataset.postId);
+        if (p) navigateTo('post-detail', p);
+      });
+    });
   });
 }
 
