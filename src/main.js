@@ -67,9 +67,60 @@ const sliderNext = $('#sliderNext');
 const sliderCount = $('#sliderCount');
 
 // ============================================
+// URL ROUTER — Slug ↔ Page mapping
+// ============================================
+const ROUTES = {
+  '/': { page: 'home', title: 'Trang chủ' },
+  // Giới thiệu
+  '/thu-ngo': { page: 'about-letter', title: 'Thư Ngỏ' },
+  '/tam-nhin-su-menh': { page: 'about-vision', title: 'Tầm Nhìn & Sứ Mệnh' },
+  '/gia-tri-cot-loi': { page: 'about-values', title: 'Giá Trị Cốt Lõi' },
+  '/lich-su': { page: 'history', title: 'Lịch Sử Hình Thành' },
+  '/so-do-to-chuc': { page: 'about-org', title: 'Sơ Đồ Tổ Chức' },
+  '/chung-chi': { page: 'about-cert', title: 'Chứng Chỉ' },
+  '/giai-thuong': { page: 'about-awards', title: 'Giải Thưởng' },
+  // Năng lực
+  '/nang-luc-nhan-su': { page: 'cap-hr', title: 'Năng Lực Nhân Sự' },
+  '/nang-luc-san-xuat': { page: 'cap-prod', title: 'Năng Lực Sản Xuất' },
+  '/nang-luc-thi-cong': { page: 'cap-construct', title: 'Năng Lực Thi Công' },
+  '/nang-luc-nha-may': { page: 'cap-factory', title: 'Năng Lực Nhà Máy Thiết Bị' },
+  '/an-toan-lao-dong': { page: 'cap-safety', title: 'Quản Lý An Toàn Lao Động' },
+  // Dịch vụ
+  '/tong-thau-xay-dung': { page: 'svc-general', title: 'Tổng Thầu Xây Dựng' },
+  '/tu-van-dau-tu-fdi': { page: 'svc-fdi', title: 'Tư Vấn Đầu Tư Dự Án FDI' },
+  '/san-xuat-ket-cau-thep': { page: 'svc-steel', title: 'Sản Xuất Kết Cấu Thép' },
+  '/tu-van-thiet-ke': { page: 'svc-design', title: 'Tư Vấn Thiết Kế' },
+  '/kinh-doanh-thuong-mai': { page: 'svc-trade', title: 'Kinh Doanh Thương Mại' },
+  // Dự án
+  '/du-an-da-trien-khai': { page: 'proj-done', title: 'Dự Án Đã Triển Khai' },
+  '/du-an-dang-trien-khai': { page: 'proj-ongoing', title: 'Dự Án Đang Triển Khai' },
+  '/du-an-tieu-bieu': { page: 'exhibitions', title: 'Dự Án Tiêu Biểu' },
+  '/du-an-theo-quoc-gia': { page: 'proj-country', title: 'Dự Án Theo Quốc Gia' },
+  '/du-an-theo-linh-vuc': { page: 'proj-field', title: 'Dự Án Theo Lĩnh Vực' },
+  // Tin tức
+  '/tin-cong-ty': { page: 'news', title: 'Tin Công Ty' },
+  '/tin-cong-truong': { page: 'news-site', title: 'Tin Công Trường' },
+  '/tuyen-dung': { page: 'news-recruit', title: 'Tin Tuyển Dụng' },
+  '/kien-thuc-chuyen-mon': { page: 'news-knowledge', title: 'Kiến Thức Chuyên Môn' },
+  // Khác
+  '/lien-he': { page: 'contact', title: 'Liên Hệ' },
+  '/tai-lieu': { page: 'documents', title: 'Tài Liệu' },
+};
+
+// Reverse lookup: page → slug
+const PAGE_TO_SLUG = {};
+const PAGE_TO_TITLE = {};
+for (const [slug, info] of Object.entries(ROUTES)) {
+  PAGE_TO_SLUG[info.page] = slug;
+  PAGE_TO_TITLE[info.page] = info.title;
+}
+
+const SITE_NAME = 'Tiến Thịnh JSC';
+
+// ============================================
 // NAVIGATION
 // ============================================
-function navigateTo(page, data = null) {
+function navigateTo(page, data = null, { pushHistory = true } = {}) {
   // Close menu if open
   if (state.menuOpen) toggleMenu();
 
@@ -83,6 +134,19 @@ function navigateTo(page, data = null) {
   }
 
   state.currentPage = page;
+
+  // Update URL via History API
+  if (pushHistory) {
+    const slug = PAGE_TO_SLUG[page] || '/';
+    const title = PAGE_TO_TITLE[page] || 'Trang chủ';
+    const fullTitle = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
+    document.title = fullTitle;
+    history.pushState({ page, data: null }, fullTitle, slug);
+  }
+
+  // Update document title (also for popstate)
+  const title = PAGE_TO_TITLE[page] || 'Trang chủ';
+  document.title = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
 
   // Show/hide header based on page
   const statsBar = document.getElementById('statsBar');
@@ -138,14 +202,53 @@ function navigateTo(page, data = null) {
 
   // Reset header compact state
   header.classList.remove('header--compact');
+
+  // Update active states on nav links
+  $$('[data-page]').forEach(link => {
+    const linkPage = link.getAttribute('data-page');
+    link.classList.toggle('active', linkPage === page);
+  });
 }
 
-// Setup nav links
+// Handle browser Back / Forward buttons
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.page) {
+    navigateTo(e.state.page, null, { pushHistory: false });
+  } else {
+    // Fallback: read URL
+    const route = ROUTES[window.location.pathname];
+    navigateTo(route ? route.page : 'home', null, { pushHistory: false });
+  }
+});
+
+// Read initial URL on page load
+function initRouter() {
+  const path = window.location.pathname;
+  const route = ROUTES[path];
+  if (route && route.page !== 'home') {
+    // Navigate to the page matching the URL, without pushing history (it's the initial load)
+    navigateTo(route.page, null, { pushHistory: false });
+    // Replace current history entry so Back button works correctly
+    history.replaceState({ page: route.page }, document.title, path);
+  } else if (path === '/' || path === '') {
+    history.replaceState({ page: 'home' }, document.title, '/');
+  } else {
+    // Unknown URL — show home or 404
+    navigateTo('home', null, { pushHistory: false });
+    history.replaceState({ page: 'home' }, document.title, '/');
+  }
+}
+
+// Setup nav links — also update href for SEO & right-click "Open in new tab"
 function setupNavigation() {
   $$('[data-page]').forEach(link => {
+    const page = link.getAttribute('data-page');
+    const slug = PAGE_TO_SLUG[page];
+    if (slug) {
+      link.setAttribute('href', slug);
+    }
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const page = link.getAttribute('data-page');
       navigateTo(page);
     });
   });
@@ -2560,8 +2663,8 @@ async function init() {
   setupFooterReveal();
   setupFooterCTA();
 
-  // Default to home page
-  navigateTo('home');
+  // Route based on current URL (instead of always going to home)
+  initRouter();
 
   // Load dynamic content in background
   renderNavigation();
