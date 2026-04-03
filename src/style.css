@@ -4621,6 +4621,7 @@ html[data-theme] .site-footer {
 /* Dynamic Page — Created from Admin Panel */
 .page--dynamic {
   min-height: 60vh;
+  padding-top: calc(var(--header-height) + 0px); /* push below fixed header */
 }
 
 .dynamic-page-loading {
@@ -4647,11 +4648,15 @@ html[data-theme] .site-footer {
 }
 
 .dynamic-page__breadcrumb {
-  padding: 1.5rem var(--content-padding, 2rem);
-  font-size: 0.85rem;
+  padding: 1rem var(--content-padding, 2rem);
+  font-size: 0.875rem;
   color: var(--color-text-muted);
-  background: var(--color-bg-secondary, #f8f8f8);
+  background: var(--color-bg-secondary, #f5f5f5);
   border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
 }
 
 .dynamic-page__breadcrumb a {

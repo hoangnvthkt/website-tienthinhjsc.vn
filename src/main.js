@@ -2208,18 +2208,37 @@ async function loadDynamicPages() {
     const pages = await fetchPages();
     if (!pages || pages.length === 0) return;
 
-    // Build parent lookup for breadcrumbs
+    // Build parent lookup for breadcrumbs & nested URLs
     const pageMap = {};
     pages.forEach(p => { pageMap[p.id] = p; });
+
+    // Helper: build full slug path from parent chain (e.g. /tam-nhin-su-menh/test-seo-page)
+    function buildFullPath(page) {
+      const parts = [];
+      let current = page;
+      while (current) {
+        parts.unshift(current.slug);
+        current = current.parent_id ? pageMap[current.parent_id] : null;
+      }
+      return '/' + parts.join('/');
+    }
 
     for (const page of pages) {
       const slug = page.slug;
       if (!slug) continue;
 
+      // Build full hierarchical path
+      const fullPath = buildFullPath(page);
+
       // Check if this page already has a static element (skip if yes — handled by tryRenderDynamicPage)
       const existingStaticPageId = PAGE_SLUG_MAP[slug];
       if (existingStaticPageId && document.getElementById(existingStaticPageId)) {
-        continue; // Static page exists, tryRenderDynamicPage will handle it
+        // Even for static pages, register the hierarchical route if it has a parent
+        if (page.parent_id && fullPath !== `/${slug}`) {
+          const staticPage = ROUTES[`/${slug}`]?.page || existingStaticPageId.replace('page-', '');
+          ROUTES[fullPath] = ROUTES[`/${slug}`] || { page: staticPage, title: page.meta_title || page.title };
+        }
+        continue;
       }
 
       // Check if we already created a dynamic element for this slug
@@ -2247,20 +2266,24 @@ async function loadDynamicPages() {
         document.body.appendChild(pageEl);
       }
 
-      // Register in ROUTES for URL routing
-      const routeSlug = `/${slug}`;
-      if (!ROUTES[routeSlug]) {
-        ROUTES[routeSlug] = { page: `dynamic-${slug}`, title: page.meta_title || page.title };
-        PAGE_TO_SLUG[`dynamic-${slug}`] = routeSlug;
-        PAGE_TO_TITLE[`dynamic-${slug}`] = page.meta_title || page.title;
+      // Register in ROUTES for URL routing — use hierarchical path
+      const pageKey = `dynamic-${slug}`;
+      if (!ROUTES[fullPath]) {
+        ROUTES[fullPath] = { page: pageKey, title: page.meta_title || page.title };
       }
+      // Also register flat path as fallback
+      if (!ROUTES[`/${slug}`]) {
+        ROUTES[`/${slug}`] = { page: pageKey, title: page.meta_title || page.title };
+      }
+      PAGE_TO_SLUG[pageKey] = fullPath;
+      PAGE_TO_TITLE[pageKey] = page.meta_title || page.title;
 
       // Also register in PAGE_SLUG_MAP for tryRenderDynamicPage compatibility
       PAGE_SLUG_MAP[slug] = dynamicPageId;
 
       // Update nav link hrefs (if any nav links point to this slug via data-page)
-      $$(`[data-page="dynamic-${slug}"]`).forEach(link => {
-        link.setAttribute('href', routeSlug);
+      $$(`[data-page="${pageKey}"]`).forEach(link => {
+        link.setAttribute('href', fullPath);
       });
 
       // Fetch and render sections
@@ -2291,31 +2314,38 @@ async function loadDynamicPageContent(page, pageEl, pageMap) {
   try {
     const sections = await fetchPageSections(slug);
 
-    // Build breadcrumb trail
+    // Build breadcrumb trail with hierarchical paths
     const breadcrumbs = [];
     let current = page;
     while (current) {
-      breadcrumbs.unshift({ title: current.title, slug: current.slug });
+      breadcrumbs.unshift({ title: current.title, slug: current.slug, id: current.id });
       current = current.parent_id ? pageMap[current.parent_id] : null;
     }
+
+    // Build hierarchical paths for each breadcrumb
+    breadcrumbs.forEach((bc, i) => {
+      const pathParts = breadcrumbs.slice(0, i + 1).map(b => b.slug);
+      bc.path = '/' + pathParts.join('/');
+    });
 
     // Build page HTML
     let html = '';
 
-    // Breadcrumb
-    if (breadcrumbs.length > 1) {
-      html += `<nav class="dynamic-page__breadcrumb" aria-label="Breadcrumb">
-        <a href="/" data-page="home">Trang chủ</a>`;
-      breadcrumbs.forEach((bc, i) => {
-        const isLast = i === breadcrumbs.length - 1;
-        if (isLast) {
-          html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <span class="dynamic-page__breadcrumb-current">${bc.title}</span>`;
-        } else {
-          html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <a href="/${bc.slug}" data-page="dynamic-${bc.slug}">${bc.title}</a>`;
-        }
-      });
-      html += `</nav>`;
-    }
+    // Breadcrumb — always show for dynamic pages
+    html += `<nav class="dynamic-page__breadcrumb" aria-label="Breadcrumb">
+      <a href="/" data-page="home">Trang chủ</a>`;
+    breadcrumbs.forEach((bc, i) => {
+      const isLast = i === breadcrumbs.length - 1;
+      if (isLast) {
+        html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <span class="dynamic-page__breadcrumb-current">${bc.title}</span>`;
+      } else {
+        // Check if parent is a static page or dynamic page
+        const pageKey = PAGE_SLUG_MAP[bc.slug] ? bc.slug : `dynamic-${bc.slug}`;
+        const linkPath = PAGE_TO_SLUG[pageKey] || PAGE_TO_SLUG[bc.slug] || bc.path;
+        html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <a href="${linkPath}" data-page="${PAGE_SLUG_MAP[bc.slug] ? ROUTES[`/${bc.slug}`]?.page || bc.slug : `dynamic-${bc.slug}`}">${bc.title}</a>`;
+      }
+    });
+    html += `</nav>`;
 
     // If sections exist, render them
     if (sections && sections.length > 0) {
