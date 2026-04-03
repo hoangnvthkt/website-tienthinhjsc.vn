@@ -45,14 +45,14 @@ export default function CategoriesPage() {
 
   const startAdd = () => {
     const cats = activeTab === 'project' ? projectCats : postCats
-    const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order), 0)
+    const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order ?? 0), 0)
     setEditing({ id: null, name: '', slug: '', sort_order: maxOrder + 1 })
     setError('')
     setTimeout(() => nameInputRef.current?.focus(), 50)
   }
 
   const startEdit = (cat: ProjectCategory | PostCategory) => {
-    setEditing({ id: cat.id, name: cat.name, slug: cat.slug, sort_order: cat.sort_order })
+    setEditing({ id: cat.id, name: cat.name, slug: cat.slug, sort_order: cat.sort_order ?? 0 })
     setError('')
     setTimeout(() => nameInputRef.current?.focus(), 50)
   }

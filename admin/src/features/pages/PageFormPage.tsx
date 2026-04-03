@@ -65,7 +65,7 @@ export default function PageFormPage() {
           meta_description: data.meta_description || '',
           featured_image: data.featured_image,
           parent_id: data.parent_id,
-          status: data.status || 'published',
+          status: (data.status as FormData['status']) || 'published',
           sort_order: data.sort_order || 0,
           template: data.template || 'default',
         })

@@ -193,13 +193,13 @@ export default function ActivityLogPage() {
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${colorClass}`}>
                         {actionLabelsVi[log.action] || log.action}
                       </span>
-                      <span className="text-xs text-gray-400">{timeAgo(log.created_at)}</span>
+                      <span className="text-xs text-gray-400">{log.created_at ? timeAgo(log.created_at) : '—'}</span>
                     </div>
                   </div>
 
                   {/* Time */}
                   <span className="text-xs text-gray-400 shrink-0 mt-1">
-                    {new Date(log.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {log.created_at ? new Date(log.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '—'}
                   </span>
                 </div>
               )

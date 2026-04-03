@@ -2067,14 +2067,18 @@ async function renderNavigation() {
     }</a>`;
   }
 
-  // Build submenu
+  // Build submenu (supports nested sub-sub-menus)
   function buildSubmenu(children) {
     if (!children?.length) return '';
     const lis = children.map(child => {
       const dataPage = child.link_type === 'page' ? child.link_value : null;
       const href = child.link_type === 'custom' ? (child.link_value || '#') : '#';
       const attrs = dataPage ? `data-page="${dataPage}"` : '';
-      return `<li><a href="${href}" ${attrs} class="header__sub-link">${child.title}</a></li>`;
+      const hasNested = child.children?.length > 0;
+      const cls = hasNested ? 'header__sub-item header__sub-item--has-sub' : 'header__sub-item';
+      const chevron = hasNested ? ' <svg class="header__sub-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>' : '';
+      const nestedMenu = hasNested ? buildSubmenu(child.children) : '';
+      return `<li class="${cls}"><a href="${href}" ${attrs} class="header__sub-link">${child.title}${chevron}</a>${nestedMenu}</li>`;
     }).join('');
     return `<ul class="header__submenu">${lis}</ul>`;
   }

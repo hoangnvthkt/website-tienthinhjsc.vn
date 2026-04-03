@@ -37,7 +37,7 @@ export default function UsersPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const { data } = await supabase 
+      const { data } = await (supabase as any)
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: true })
@@ -80,7 +80,7 @@ export default function UsersPage() {
       if (signUpData.user) {
         // Wait for trigger to create profile
         await new Promise(r => setTimeout(r, 1000))
-        await supabase.from('profiles').update({ 
+        await (supabase as any).from('profiles').update({ 
           role: inviteRole,
           full_name: inviteName || inviteEmail.split('@')[0]
         }).eq('id', signUpData.user.id)
@@ -103,7 +103,7 @@ export default function UsersPage() {
   }
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'editor' | 'viewer') => {
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+    await (supabase as any).from('profiles').update({ role: newRole }).eq('id', userId)
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
     setEditingRole(null)
   }

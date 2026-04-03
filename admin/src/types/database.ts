@@ -788,3 +788,19 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// ─── Convenience type aliases ─────────────────────────────────────────
+export type Profile = Tables<'profiles'>
+export type Project = Tables<'projects'>
+export type Post = Tables<'posts'>
+export type Page = Tables<'pages'>
+export type Contact = Tables<'contacts'>
+export type Document = Tables<'documents'>
+export type NavigationItem = Tables<'navigation_items'>
+export type PageSection = Tables<'page_sections'>
+export type Media = Tables<'media'>
+export type ActivityLog = Tables<'activity_logs'>
+export type SiteSetting = Tables<'site_settings'>
+export type PostCategory = Tables<'post_categories'>
+export type ProjectCategory = Tables<'project_categories'>
+export type SectionTemplate = Tables<'section_templates'>

@@ -54,7 +54,7 @@ export default function PostFormPage() {
         if (error || !data) { navigate('/posts'); return }
         setForm({
           title: data.title, slug: data.slug, excerpt: data.excerpt || '', content: data.content || '',
-          featured_image: data.featured_image, category: data.category, category_id: data.category_id || null, status: data.status,
+          featured_image: data.featured_image, category: data.category, category_id: data.category_id || null, status: (data.status as FormData['status']) || 'draft',
           meta_title: data.meta_title || '', meta_description: data.meta_description || ''
         })
         setLoading(false)

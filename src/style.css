@@ -312,6 +312,54 @@ ul, ol {
   right: 0;
 }
 
+/* === Nested Flyout Sub-sub-menu (3rd level) === */
+.header__sub-item {
+  position: relative;
+}
+
+.header__sub-item--has-sub > .header__sub-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.header__sub-chevron {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.header__sub-item--has-sub:hover > .header__sub-link .header__sub-chevron {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Nested submenu flies out to the right */
+.header__sub-item--has-sub > .header__submenu {
+  position: absolute;
+  top: -8px;
+  left: 100%;
+  min-width: 220px;
+  margin-left: 0;
+  border-top: 1px solid var(--color-border);
+  box-shadow: 4px 8px 30px rgba(0,0,0,0.08);
+}
+
+.header__sub-item--has-sub:hover > .header__submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) translateX(0);
+}
+
+/* Right-nav flyouts go LEFT instead of right */
+.header__nav--right .header__sub-item--has-sub > .header__submenu {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 /* === Logo (centered) === */
 .header__logo {
   position: absolute;

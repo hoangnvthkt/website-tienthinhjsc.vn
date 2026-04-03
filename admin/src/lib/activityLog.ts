@@ -1,4 +1,7 @@
 import { supabase } from './supabase'
+import type { Database } from '@/types/database'
+
+type ActivityLogInsert = Database['public']['Tables']['activity_logs']['Insert']
 
 export type ActivityAction = 'create' | 'update' | 'delete'
 export type EntityType = 'project' | 'post' | 'page' | 'contact' | 'document' | 'media' | 'navigation' | 'category' | 'settings' | 'user'
@@ -29,15 +32,16 @@ export async function logActivity(
   try {
     const { data: { user } } = await supabase.auth.getUser()
     
-    await supabase.from('activity_logs').insert({
+    const row: ActivityLogInsert = {
       user_id: user?.id || null,
       user_email: user?.email || null,
       action,
       entity_type: entityType,
       entity_id: entityId || null,
       entity_title: entityTitle || null,
-      details: details || null,
-    })
+      details: (details as Database['public']['Tables']['activity_logs']['Insert']['details']) || null,
+    }
+    await (supabase.from('activity_logs') as any).insert(row)
   } catch (err) {
     console.error('Failed to log activity:', err)
   }
@@ -50,8 +54,7 @@ export async function fetchActivityLogs(limit = 50, offset = 0, filters?: {
   entityType?: EntityType
   action?: ActivityAction
 }) {
-  let query = supabase
-    .from('activity_logs')
+  let query = (supabase.from('activity_logs') as any)
     .select('*')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)

@@ -41,7 +41,7 @@ function buildNavTree(items: NavigationItem[]): NavNode[] {
     }
   })
   const sortNodes = (nodes: NavNode[]) => {
-    nodes.sort((a, b) => a.sort_order - b.sort_order)
+    nodes.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     nodes.forEach(n => sortNodes(n.children))
   }
   sortNodes(roots)
@@ -97,12 +97,12 @@ export default function NavigationPage() {
     setIsNew(false)
     setForm({
       title: item.title,
-      link_type: item.link_type,
+      link_type: (item.link_type as EditForm['link_type']) || 'custom',
       link_value: item.link_value || '',
       parent_id: item.parent_id,
-      target: item.target,
+      target: item.target || '_self',
       icon: item.icon || '',
-      is_visible: item.is_visible,
+      is_visible: item.is_visible ?? true,
     })
   }
 
@@ -136,7 +136,7 @@ export default function NavigationPage() {
     }
 
     if (isNew) {
-      const maxOrder = items.filter(i => i.parent_id === form.parent_id).reduce((max, i) => Math.max(max, i.sort_order), -1)
+      const maxOrder = items.filter(i => i.parent_id === form.parent_id).reduce((max, i) => Math.max(max, i.sort_order ?? 0), -1)
       await supabase.from('navigation_items').insert({ ...payload, sort_order: maxOrder + 1 })
     } else if (editingId) {
       await supabase.from('navigation_items').update(payload).eq('id', editingId)
@@ -157,14 +157,14 @@ export default function NavigationPage() {
   }
 
   // Toggle visibility
-  const toggleVisibility = async (id: string, currentVisible: boolean) => {
+  const toggleVisibility = async (id: string, currentVisible: boolean | null) => {
     await supabase.from('navigation_items').update({ is_visible: !currentVisible }).eq('id', id)
     fetchItems()
   }
 
   // Move item up/down (within same parent group)
   const moveItem = async (item: NavigationItem, dir: -1 | 1) => {
-    const siblings = items.filter(i => i.parent_id === item.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+    const siblings = items.filter(i => i.parent_id === item.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     const idx = siblings.findIndex(s => s.id === item.id)
     const swapIdx = idx + dir
     if (swapIdx < 0 || swapIdx >= siblings.length) return
@@ -179,7 +179,7 @@ export default function NavigationPage() {
   }
 
   // Flat list for drag-drop of root items
-  const flatRoots = items.filter(i => !i.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+  const flatRoots = items.filter(i => !i.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 
   const handleDragStart = (idx: number) => setDragIdx(idx)
   const handleDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDropIdx(idx) }
@@ -209,7 +209,7 @@ export default function NavigationPage() {
     const hasChildren = node.children.length > 0
     const isExpanded = expandedIds.has(node.id)
     const isEditing = editingId === node.id
-    const siblings = items.filter(i => i.parent_id === node.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+    const siblings = items.filter(i => i.parent_id === node.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     const siblingIdx = siblings.findIndex(s => s.id === node.id)
 
     return (
@@ -267,7 +267,7 @@ export default function NavigationPage() {
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded disabled:opacity-30">
               <ChevronDown size={13} />
             </button>
-            <button onClick={() => toggleVisibility(node.id, node.is_visible)}
+            <button onClick={() => toggleVisibility(node.id, node.is_visible ?? true)}
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
               title={node.is_visible ? 'Ẩn' : 'Hiện'}>
               {node.is_visible ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -437,9 +437,24 @@ export default function NavigationPage() {
                   <select value={form.parent_id || ''} onChange={e => setForm(f => ({ ...f, parent_id: e.target.value || null }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                     <option value="">— Root (cấp 1) —</option>
-                    {rootItems.filter(r => r.id !== editingId).map(r => (
-                      <option key={r.id} value={r.id}>{r.title}</option>
-                    ))}
+                    {(() => {
+                      const options: { id: string; label: string }[] = []
+                      const renderOptions = (nodes: NavNode[], depth = 0) => {
+                        nodes.forEach(node => {
+                          if (node.id === editingId) return
+                          const prefix = depth === 0 ? '' : '— '.repeat(depth)
+                          const icon = depth === 0 ? '📂 ' : depth === 1 ? '📁 ' : '📄 '
+                          options.push({ id: node.id, label: `${prefix}${icon}${node.title}` })
+                          if (node.children.length > 0) {
+                            renderOptions(node.children, depth + 1)
+                          }
+                        })
+                      }
+                      renderOptions(tree)
+                      return options.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
+                      ))
+                    })()}
                   </select>
                 </div>
 

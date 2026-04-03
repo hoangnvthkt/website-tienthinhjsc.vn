@@ -3,37 +3,52 @@ import type { FormEvent } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, authError, retryAuth } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const displayError = error || authError || ''
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!email || !password) return
+    if (loading) return // Prevent double-submit
+
     setError('')
     setLoading(true)
 
     try {
-      const { error } = await signIn(email, password)
-      if (error) {
+      const { error: signInError } = await signIn(email, password)
+      if (signInError) {
         setError(
-          error.message === 'Invalid login credentials'
+          signInError.message === 'Invalid login credentials'
             ? 'Email hoặc mật khẩu không đúng'
-            : error.message
+            : signInError.message
         )
         setLoading(false)
       }
-      // If no error → onAuthStateChange in AuthProvider will update user state
-      // → AuthGuard will auto-show dashboard. No need to setLoading(false) here.
-      // But add a safety timeout in case state doesn't update:
-      setTimeout(() => setLoading(false), 5000)
+      // If no error → user state is already set by signIn
+      // Loading will be cleared when AuthGuard re-renders with user
     } catch {
       setError('Đã xảy ra lỗi. Vui lòng thử lại.')
       setLoading(false)
     }
   }
+
+  const handleRetry = () => {
+    setError('')
+    retryAuth()
+  }
+
+  const isNetworkErr =
+    displayError.includes('kết nối') ||
+    displayError.includes('fetch') ||
+    displayError.includes('timeout') ||
+    displayError.includes('server') ||
+    displayError.includes('NetworkError') ||
+    displayError.includes('timed out')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
@@ -51,9 +66,34 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
+          {displayError && (
+            <div
+              className={`px-4 py-3 rounded-lg text-sm ${
+                isNetworkErr
+                  ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 mt-0.5">
+                  {isNetworkErr ? '🌐' : '⚠️'}
+                </span>
+                <div className="flex-1">
+                  <p>{displayError}</p>
+                  {isNetworkErr && (
+                    <button
+                      type="button"
+                      onClick={handleRetry}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-md transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114.9-4M20 15a8 8 0 01-14.9 4" />
+                      </svg>
+                      Thử lại
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -69,6 +109,7 @@ export default function LoginPage() {
               placeholder="admin@tienthinhjsc.vn"
               required
               disabled={loading}
+              autoComplete="email"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors disabled:bg-gray-50"
             />
           </div>
@@ -85,6 +126,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               required
               disabled={loading}
+              autoComplete="current-password"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors disabled:bg-gray-50"
             />
           </div>
@@ -102,7 +144,9 @@ export default function LoginPage() {
                 </svg>
                 Đang đăng nhập...
               </span>
-            ) : 'Đăng nhập'}
+            ) : (
+              'Đăng nhập'
+            )}
           </button>
         </form>
 

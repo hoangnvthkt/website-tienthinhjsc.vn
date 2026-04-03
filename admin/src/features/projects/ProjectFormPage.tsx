@@ -52,7 +52,7 @@ export default function ProjectFormPage() {
         setForm({
           title: data.title, slug: data.slug, subtitle: data.subtitle || '', category: data.category || '',
           category_id: data.category_id || '', year: data.year || '', description: data.description || '',
-          specs: data.specs || '', featured_image: data.featured_image, status: data.status,
+          specs: data.specs || '', featured_image: data.featured_image, status: (data.status as FormData['status']) || 'draft',
           sort_order: data.sort_order,
           meta_title: data.meta_title || '', meta_description: data.meta_description || ''
         })
