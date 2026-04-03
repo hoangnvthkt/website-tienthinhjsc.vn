@@ -203,6 +203,32 @@ function getTagColor(tag) {
 }
 
 /**
+ * Fetch all published pages from Supabase (with parent/child hierarchy)
+ */
+export async function fetchPages() {
+  if (cache.pages) return cache.pages
+
+  try {
+    const { data, error } = await supabase
+      .from('pages')
+      .select('id, title, slug, status, parent_id, template, meta_title, meta_description')
+      .eq('status', 'published')
+      .order('created_at', { ascending: true })
+
+    if (error || !data?.length) {
+      console.warn('No pages found:', error?.message)
+      return []
+    }
+
+    cache.pages = data
+    return data
+  } catch {
+    console.warn('Failed to fetch pages')
+    return []
+  }
+}
+
+/**
  * Fetch page sections for a given page slug from Supabase
  * Used by the dynamic section renderer in main.js
  */

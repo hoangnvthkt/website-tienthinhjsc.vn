@@ -1,6 +1,6 @@
 import './style.css';
 import { products as staticProducts } from './data.js';
-import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects } from './api.js';
+import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects, fetchPages } from './api.js';
 
 // ============================================
 // APP STATE
@@ -222,6 +222,8 @@ window.addEventListener('popstate', (e) => {
 });
 
 // Read initial URL on page load
+let pendingDynamicPath = null; // For dynamic pages not yet loaded
+
 function initRouter() {
   const path = window.location.pathname;
   const route = ROUTES[path];
@@ -233,9 +235,11 @@ function initRouter() {
   } else if (path === '/' || path === '') {
     history.replaceState({ page: 'home' }, document.title, '/');
   } else {
-    // Unknown URL — show home or 404
+    // URL not in static routes — could be a dynamic page (loaded later)
+    // Store path and show home for now; loadDynamicPages will re-route
+    pendingDynamicPath = path;
     navigateTo('home', null, { pushHistory: false });
-    history.replaceState({ page: 'home' }, document.title, '/');
+    // Don't replaceState yet — keep the URL as-is
   }
 }
 
@@ -2190,6 +2194,189 @@ async function renderFooterNav() {
 }
 
 // ============================================
+// DYNAMIC PAGE LOADER
+// Fetches pages from Admin (Supabase) and creates them on the frontend
+// ============================================
+
+/**
+ * Load all published pages from Supabase.
+ * For pages that don't already have a static HTML element, create one dynamically.
+ * Register them in the URL router so direct URL access works.
+ */
+async function loadDynamicPages() {
+  try {
+    const pages = await fetchPages();
+    if (!pages || pages.length === 0) return;
+
+    // Build parent lookup for breadcrumbs
+    const pageMap = {};
+    pages.forEach(p => { pageMap[p.id] = p; });
+
+    for (const page of pages) {
+      const slug = page.slug;
+      if (!slug) continue;
+
+      // Check if this page already has a static element (skip if yes — handled by tryRenderDynamicPage)
+      const existingStaticPageId = PAGE_SLUG_MAP[slug];
+      if (existingStaticPageId && document.getElementById(existingStaticPageId)) {
+        continue; // Static page exists, tryRenderDynamicPage will handle it
+      }
+
+      // Check if we already created a dynamic element for this slug
+      const dynamicPageId = `page-dynamic-${slug}`;
+      if (document.getElementById(dynamicPageId)) continue;
+
+      // Create a new page DOM element
+      const pageEl = document.createElement('main');
+      pageEl.className = 'page page--subpage page--dynamic';
+      pageEl.id = dynamicPageId;
+
+      // Add loading state
+      pageEl.innerHTML = `
+        <div class="dynamic-page-loading">
+          <div class="dynamic-page-loading__spinner"></div>
+          <p>Đang tải trang...</p>
+        </div>
+      `;
+
+      // Insert before footer
+      const footer = document.getElementById('siteFooter');
+      if (footer) {
+        footer.parentNode.insertBefore(pageEl, footer);
+      } else {
+        document.body.appendChild(pageEl);
+      }
+
+      // Register in ROUTES for URL routing
+      const routeSlug = `/${slug}`;
+      if (!ROUTES[routeSlug]) {
+        ROUTES[routeSlug] = { page: `dynamic-${slug}`, title: page.meta_title || page.title };
+        PAGE_TO_SLUG[`dynamic-${slug}`] = routeSlug;
+        PAGE_TO_TITLE[`dynamic-${slug}`] = page.meta_title || page.title;
+      }
+
+      // Also register in PAGE_SLUG_MAP for tryRenderDynamicPage compatibility
+      PAGE_SLUG_MAP[slug] = dynamicPageId;
+
+      // Update nav link hrefs (if any nav links point to this slug via data-page)
+      $$(`[data-page="dynamic-${slug}"]`).forEach(link => {
+        link.setAttribute('href', routeSlug);
+      });
+
+      // Fetch and render sections
+      loadDynamicPageContent(page, pageEl, pageMap);
+    }
+
+    // Re-check the URL after loading dynamic pages (user might have navigated to a dynamic page directly)
+    const pathToCheck = pendingDynamicPath || window.location.pathname;
+    const route = ROUTES[pathToCheck];
+    if (route && route.page.startsWith('dynamic-') && state.currentPage !== route.page) {
+      navigateTo(route.page, null, { pushHistory: false });
+      history.replaceState({ page: route.page }, document.title, pathToCheck);
+      pendingDynamicPath = null;
+    }
+
+    console.log(`✅ ${pages.length} pages loaded from Admin`);
+  } catch (err) {
+    console.warn('Failed to load dynamic pages:', err);
+  }
+}
+
+/**
+ * Load and render content for a single dynamic page
+ */
+async function loadDynamicPageContent(page, pageEl, pageMap) {
+  const slug = page.slug;
+
+  try {
+    const sections = await fetchPageSections(slug);
+
+    // Build breadcrumb trail
+    const breadcrumbs = [];
+    let current = page;
+    while (current) {
+      breadcrumbs.unshift({ title: current.title, slug: current.slug });
+      current = current.parent_id ? pageMap[current.parent_id] : null;
+    }
+
+    // Build page HTML
+    let html = '';
+
+    // Breadcrumb
+    if (breadcrumbs.length > 1) {
+      html += `<nav class="dynamic-page__breadcrumb" aria-label="Breadcrumb">
+        <a href="/" data-page="home">Trang chủ</a>`;
+      breadcrumbs.forEach((bc, i) => {
+        const isLast = i === breadcrumbs.length - 1;
+        if (isLast) {
+          html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <span class="dynamic-page__breadcrumb-current">${bc.title}</span>`;
+        } else {
+          html += ` <span class="dynamic-page__breadcrumb-sep">›</span> <a href="/${bc.slug}" data-page="dynamic-${bc.slug}">${bc.title}</a>`;
+        }
+      });
+      html += `</nav>`;
+    }
+
+    // If sections exist, render them
+    if (sections && sections.length > 0) {
+      html += '<div class="dynamic-page__sections">';
+      for (const section of sections) {
+        const sectionEl = await renderSection(section);
+        if (sectionEl) {
+          html += sectionEl.outerHTML;
+        }
+      }
+      html += '</div>';
+    } else {
+      // No sections — show page title at minimum
+      html += `
+        <div class="dynamic-page__empty">
+          <div class="subpage-header">
+            <h1 class="subpage-header__title">${page.title}</h1>
+            ${page.meta_description ? `<p class="subpage-header__desc">${page.meta_description}</p>` : ''}
+          </div>
+          <div class="dynamic-page__no-content">
+            <p>Trang này chưa có nội dung. Vui lòng thêm sections trong Admin Panel.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    pageEl.innerHTML = html;
+
+    // Setup click handlers for breadcrumb links
+    pageEl.querySelectorAll('[data-page]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo(link.getAttribute('data-page'));
+      });
+    });
+
+    // Setup scroll reveal for dynamic sections
+    setTimeout(() => {
+      pageEl.querySelectorAll('.dynamic-section[data-reveal]').forEach(el => {
+        const observer = new IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting) {
+            el.classList.add('revealed');
+            observer.disconnect();
+          }
+        }, { threshold: 0.1 });
+        observer.observe(el);
+      });
+    }, 100);
+
+  } catch (err) {
+    console.warn(`Failed to load page content: ${slug}`, err);
+    pageEl.innerHTML = `
+      <div class="dynamic-page__error">
+        <h1>${page.title}</h1>
+        <p>Không thể tải nội dung trang. Vui lòng thử lại sau.</p>
+      </div>
+    `;
+  }
+}
+
+// ============================================
 // DYNAMIC SECTION RENDERER
 // Fetches page_sections from Supabase and renders them
 // ============================================
@@ -2683,6 +2870,9 @@ async function init() {
       if (loaded) console.log(`✅ Dynamic page loaded: ${slug}`);
     });
   }
+
+  // Load pages created from Admin Panel (creates DOM elements for new pages)
+  loadDynamicPages();
 
   // Enhanced lazy-loading after initial render
   setTimeout(() => setupLazyImages(), 500);

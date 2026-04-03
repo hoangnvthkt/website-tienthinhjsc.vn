@@ -4618,6 +4618,94 @@ html[data-theme] .site-footer {
    DYNAMIC SECTIONS — Rendered from page_sections DB
    ============================================ */
 
+/* Dynamic Page — Created from Admin Panel */
+.page--dynamic {
+  min-height: 60vh;
+}
+
+.dynamic-page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+  color: var(--color-text-muted);
+}
+
+.dynamic-page-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-accent, #2d5016);
+  border-radius: 50%;
+  animation: dynamic-spin 0.8s linear infinite;
+}
+
+@keyframes dynamic-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dynamic-page__breadcrumb {
+  padding: 1.5rem var(--content-padding, 2rem);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg-secondary, #f8f8f8);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dynamic-page__breadcrumb a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.dynamic-page__breadcrumb a:hover {
+  color: var(--color-accent, #2d5016);
+  text-decoration: underline;
+}
+
+.dynamic-page__breadcrumb-sep {
+  margin: 0 0.5rem;
+  opacity: 0.5;
+}
+
+.dynamic-page__breadcrumb-current {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.dynamic-page__empty {
+  padding: 4rem var(--content-padding, 2rem);
+  text-align: center;
+}
+
+.dynamic-page__no-content {
+  margin-top: 2rem;
+  padding: 3rem 2rem;
+  border: 2px dashed var(--color-border-light);
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dynamic-page__error {
+  padding: 4rem var(--content-padding, 2rem);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.dynamic-page__error h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.dynamic-page__sections {
+  width: 100%;
+}
+
 /* Dynamic Section Base */
 .dynamic-section {
   padding: var(--section-gap) var(--content-padding);
