@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n front,admin -c blue,green \"vite\" \"cd admin && npm run dev\"",
+    "dev:front": "vite",
     "dev:admin": "cd admin && npm run dev",
-    "dev:all": "vite & cd admin && npm run dev",
     "build": "vite build",
     "build:admin": "cd admin && npm run build",
     "build:all": "vite build && cd admin && npm run build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "vite": "^8.0.1"
   },
   "dependencies": {

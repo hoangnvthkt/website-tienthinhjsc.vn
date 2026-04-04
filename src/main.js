@@ -1,6 +1,7 @@
 import './style.css';
 import { products as staticProducts } from './data.js';
 import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects, fetchPages } from './api.js';
+import { t, getLang, setLang, initI18n, getRouteTitle, translations } from './i18n.js';
 
 // ============================================
 // APP STATE
@@ -138,14 +139,14 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
   // Update URL via History API
   if (pushHistory) {
     const slug = PAGE_TO_SLUG[page] || '/';
-    const title = PAGE_TO_TITLE[page] || 'Trang chủ';
+    const title = getRouteTitle(page);
     const fullTitle = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
     document.title = fullTitle;
     history.pushState({ page, data: null }, fullTitle, slug);
   }
 
   // Update document title (also for popstate)
-  const title = PAGE_TO_TITLE[page] || 'Trang chủ';
+  const title = getRouteTitle(page);
   document.title = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
 
   // Show/hide header based on page
@@ -173,10 +174,15 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     cleanupCube();
   }
 
-  // Hide space items & stop auto-fly when leaving home
+  // Hide space/road items & stop animations when leaving home
   if (page !== 'home') {
     stopAutoFly();
+    stopRoadAnimation();
+    setHeaderRoadMode(false);
+    stopAmbientSound();
     spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   }
 
   // Scroll to top
@@ -187,9 +193,13 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     setTimeout(() => setupScrollReveal(), 50);
   }
 
-  // Re-start auto-fly if going back to home space view
+  // Re-start animations if returning to home
   if (page === 'home' && state.currentView === 'space') {
     startAutoFly();
+  } else if (page === 'home' && state.currentView === 'road') {
+    if (!roadInitialized) createRoadView();
+    startRoadAnimation();
+    setHeaderRoadMode(true);
   }
 
   // Show/hide footer (visible on subpages, hidden on home & product)
@@ -657,6 +667,1147 @@ function createGridView() {
 }
 
 // ============================================
+// HISTORY ROAD — Futuristic Winding Road 3D
+// Perspective road from far (past/2005) to near (present/2024)
+// Cubes float within road boundaries, milestones along sides
+// ============================================
+
+// Road constants
+const ROAD_TOTAL_DEPTH  = 6000;         // total road depth (Z)
+const ROAD_VANISH_Y     = 0.22;         // vanishing point Y ratio (from top)
+const ROAD_AUTO_SPEED   = 0.3;
+const ROAD_SCROLL_MULT  = 0.08;
+const ROAD_BOOST_DECAY  = 0.94;
+const ROAD_MAX_SPEED    = 30;
+const ROAD_YEAR_MIN     = 2005;
+const ROAD_YEAR_MAX     = 2025;
+const ROAD_SEGMENTS     = 200;          // path resolution
+const ROAD_WIDTH_NEAR   = 840;          // road width at bottom (px) — x2
+const ROAD_WIDTH_FAR    = 24;           // road width at vanish point (px) — x2
+
+// Road state
+const roadView       = $('#roadView');
+const roadCanvas     = document.getElementById('roadCanvas');
+const roadMilestones = $('#roadMilestones');
+const btnRoad        = $('#btnRoad');
+const roadSoundToggle = $('#roadSoundToggle');
+const roadScrollHint = $('#roadScrollHint');
+let roadCtx          = null;
+let roadCameraZ      = 0;              // camera position along road
+let roadCameraZTarget = 0;
+let roadSpeedBoost   = 0;
+let roadRAF          = null;
+let roadObjects      = [];              // project cubes on road
+let roadParticles    = [];
+let roadColorPhase   = 0;
+let roadInitialized  = false;
+let roadMilestoneEls = [];
+let roadScrolledOnce = false;
+let roadStars        = [];
+let roadPathCache    = [];              // cached road path points
+let roadFlowParticles = [];             // light trails on road
+
+// Ambient sound
+let audioCtx         = null;
+let ambientGain      = null;
+let roadSoundOn      = false;
+let ambientNodes     = [];
+
+// ============ TIMELINE DATA — TUỲ CHỈNH TẠI ĐÂY ============
+// Mỗi năm có thể có NHIỀU sự kiện. Thêm/sửa/xóa tại đây.
+// Mỗi event sẽ hiển thị 1 milestone trên con đường.
+// cubeId: ID sản phẩm (từ data.js) sẽ hiển thị cube tại mốc này.
+//   - Để null nếu không muốn hiển thị cube tại mốc đó.
+//   - Mỗi cubeId chỉ nên dùng 1 lần để tránh trùng lặp.
+const ROAD_TIMELINE = [
+  { year: 2005, events: [
+    { title: 'Thành lập công ty', desc: 'Tiến Thịnh JSC được thành lập, bắt đầu hành trình trong lĩnh vực kết cấu thép.', cubeId: 'doi-ngu-thi-cong' },
+  ]},
+  { year: 2008, events: [
+    { title: 'Mở rộng quy mô', desc: 'Đầu tư nhà xưởng sản xuất hiện đại, nâng công suất lên 5.000 tấn/năm.', cubeId: 'nha-may-interior' },
+  ]},
+  { year: 2012, events: [
+    { title: 'Đạt chứng nhận ISO', desc: 'Đạt chứng nhận ISO 9001:2008, khẳng định chất lượng quản lý.', cubeId: 'chi-tiet-ket-cau' },
+    { title: 'Dự án cầu thép đầu tiên', desc: 'Hoàn thành dự án cầu thép quy mô lớn đầu tiên tại miền Trung.', cubeId: 'cau-thep-vuot-song' },
+  ]},
+  { year: 2015, events: [
+    { title: 'Khẳng định vị thế', desc: 'Trở thành nhà thầu kết cấu thép hàng đầu khu vực, với 500+ dự án hoàn thành.', cubeId: 'nha-xuong-samsung' },
+  ]},
+  { year: 2018, events: [
+    { title: 'Công nghệ BIM', desc: 'Áp dụng công nghệ BIM vào thiết kế và quản lý dự án.', cubeId: 'cao-oc-25-tang' },
+    { title: 'Nhà máy mới', desc: 'Khánh thành nhà máy sản xuất thứ 2, nâng tổng công suất lên 15.000 tấn/năm.', cubeId: 'ket-cau-mai' },
+  ]},
+  { year: 2021, events: [
+    { title: 'Chuyển đổi số', desc: 'Triển khai hệ thống ERP và quản lý dự án số hoá toàn diện.', cubeId: 'khung-thep-nang-luong' },
+  ]},
+  { year: 2024, events: [
+    { title: 'Mở rộng quốc tế', desc: 'Xuất khẩu kết cấu thép sang thị trường Nhật Bản và Hàn Quốc.', cubeId: 'khung-thep-tien-che' },
+    { title: 'Năng lượng tái tạo', desc: 'Thi công hệ thống khung thép cho 3 nhà máy điện mặt trời.', cubeId: null },
+    { title: '50.000 tấn thép', desc: 'Cán mốc tổng sản lượng 50.000 tấn thép đã cung cấp.', cubeId: null },
+  ]},
+];
+
+// Flatten timeline → flat array of milestones for rendering
+function buildMilestoneList() {
+  const list = [];
+  ROAD_TIMELINE.forEach(yearData => {
+    yearData.events.forEach((evt, i) => {
+      list.push({
+        year: yearData.year,
+        eventIndex: i,
+        totalInYear: yearData.events.length,
+        title: evt.title,
+        desc: evt.desc,
+        cubeId: evt.cubeId || null,
+      });
+    });
+  });
+  return list;
+}
+const ROAD_MILESTONE_DATA = buildMilestoneList();
+
+// Color palette
+const ROAD_COLORS = [
+  [79, 255, 176],    // neon emerald
+  [0, 212, 170],     // teal
+  [91, 180, 255],    // electric blue
+  [255, 200, 60],    // warm gold
+  [180, 120, 255],   // soft purple
+  [255, 100, 180],   // magenta pink
+];
+
+function getRoadColor(alpha) {
+  const idx = Math.floor(roadColorPhase) % ROAD_COLORS.length;
+  const next = (idx + 1) % ROAD_COLORS.length;
+  const frac = roadColorPhase - Math.floor(roadColorPhase);
+  const r = Math.round(ROAD_COLORS[idx][0] + (ROAD_COLORS[next][0] - ROAD_COLORS[idx][0]) * frac);
+  const g = Math.round(ROAD_COLORS[idx][1] + (ROAD_COLORS[next][1] - ROAD_COLORS[idx][1]) * frac);
+  const b = Math.round(ROAD_COLORS[idx][2] + (ROAD_COLORS[next][2] - ROAD_COLORS[idx][2]) * frac);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function getColorAt(phase, alpha) {
+  const idx = Math.floor(phase) % ROAD_COLORS.length;
+  const next = (idx + 1) % ROAD_COLORS.length;
+  const frac = phase - Math.floor(phase);
+  const r = Math.round(ROAD_COLORS[idx][0] + (ROAD_COLORS[next][0] - ROAD_COLORS[idx][0]) * frac);
+  const g = Math.round(ROAD_COLORS[idx][1] + (ROAD_COLORS[next][1] - ROAD_COLORS[idx][1]) * frac);
+  const b = Math.round(ROAD_COLORS[idx][2] + (ROAD_COLORS[next][2] - ROAD_COLORS[idx][2]) * frac);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// Convert year (2005–2025) to road Z position (0 = near/present, ROAD_TOTAL_DEPTH = far/past)
+function yearToRoadZ(year) {
+  const t = (year - ROAD_YEAR_MIN) / (ROAD_YEAR_MAX - ROAD_YEAR_MIN);
+  // Newest year = near (small Z), oldest = far (large Z)
+  return ROAD_TOTAL_DEPTH * (1 - t);
+}
+
+// Road path: winding bezier-like curve
+// Returns {x, y} screen position for a given depth ratio t (0=vanish/far, 1=bottom/near)
+function getRoadCenterAt(t) {
+  // Multi-sine winding — road curves left and right as it recedes
+  const wind = Math.sin(t * Math.PI * 3.2) * 0.18
+             + Math.sin(t * Math.PI * 1.7 + 0.5) * 0.1
+             + Math.sin(t * Math.PI * 5.1 + 1.2) * 0.04;
+  const centerX = 0.5 + wind;
+  // Y: perspective — bottom of screen at t=1, vanishing point at t=0
+  const centerY = ROAD_VANISH_Y + t * (0.92 - ROAD_VANISH_Y);
+  return { x: centerX, y: centerY };
+}
+
+// Get road width at depth ratio t
+function getRoadWidthAt(t) {
+  return ROAD_WIDTH_FAR + t * t * (ROAD_WIDTH_NEAR - ROAD_WIDTH_FAR);
+}
+
+// Build cached road path for rendering (call once per frame or on init)
+function buildRoadPath() {
+  roadPathCache = [];
+  for (let i = 0; i <= ROAD_SEGMENTS; i++) {
+    const t = i / ROAD_SEGMENTS;
+    const center = getRoadCenterAt(t);
+    const width = getRoadWidthAt(t);
+    roadPathCache.push({ t, cx: center.x, cy: center.y, width });
+  }
+}
+
+// ---- INITIALIZATION ----
+
+function createRoadView() {
+  if (!roadCanvas || !roadView) return;
+
+  const dpr = Math.min(window.devicePixelRatio, 1.5);
+  roadCanvas.width  = vpW * dpr;
+  roadCanvas.height = vpH * dpr;
+  roadCtx = roadCanvas.getContext('2d');
+
+  // Build the road path
+  buildRoadPath();
+
+  // Clean up old cubes
+  roadObjects = [];
+  roadView.querySelectorAll('.space-item--3d').forEach(el => el.remove());
+  roadView.querySelectorAll('.road-cube-year').forEach(el => el.remove());
+
+  // Build product lookup map (id + slug → product)
+  // Uses both current products (possibly Supabase) and static fallback
+  const productMap = {};
+  // First: static products (guaranteed to have matching IDs)
+  staticProducts.forEach(p => {
+    productMap[p.id] = p;
+  });
+  // Then: current products (possibly updated from Supabase)
+  products.forEach(p => {
+    productMap[p.id] = p;
+    if (p.slug) productMap[p.slug] = p;
+  });
+
+  // Create cubes ONLY for milestones that have a cubeId assigned
+  let cubeIndex = 0;
+  ROAD_MILESTONE_DATA.forEach((ms, msIdx) => {
+    if (!ms.cubeId) return; // Skip milestones without cube assignment
+
+    const product = productMap[ms.cubeId];
+    if (!product) {
+      console.warn(`[Road] cubeId "${ms.cubeId}" not found in products. Available IDs:`, Object.keys(productMap).slice(0, 15));
+      return;
+    }
+
+    // Position cube at its milestone's Z
+    const baseZ = yearToRoadZ(ms.year);
+    const stagger = ms.totalInYear > 1 ? ms.eventIndex * 180 : 0;
+    const roadZ = baseZ + stagger;
+    const side = (msIdx % 2 === 0) ? 1 : -1;
+    const offset = 0.7 + (cubeIndex % 3) * 0.1; // 70-90% from center — near road edge
+
+    const obj = {
+      product, year: ms.year, roadZ, side, offset,
+      milestoneIdx: msIdx,
+      colorPhase: (cubeIndex / 8) * ROAD_COLORS.length,
+      sway: cubeIndex * 1.5, // deterministic starting phase
+      swaySpeed: 0.0008 + (cubeIndex % 4) * 0.0004,
+      cubeSize: window.innerWidth <= 768 ? 120 : 160,
+    };
+
+    // Create cube DOM
+    const item = document.createElement('div');
+    item.className = 'space-item space-item--3d road-cube-item';
+    item.style.width = obj.cubeSize + 'px';
+    item.style.height = obj.cubeSize + 'px';
+    item.style.position = 'absolute';
+    item.style.transformOrigin = 'center center';
+
+    const scene = document.createElement('div');
+    scene.className = 'cube-scene-mini';
+    const cube = document.createElement('div');
+    cube.className = 'cube-mini';
+    cube.style.setProperty('--cube-tz', (obj.cubeSize / 2) + 'px');
+
+    const sideFaces = ['front', 'right', 'back', 'left'];
+    const images = product.images;
+    sideFaces.forEach((face, fi) => {
+      const faceDiv = document.createElement('div');
+      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+      const img = document.createElement('img');
+      img.src = images[fi % images.length];
+      img.alt = `${product.name} - ${face}`;
+      img.loading = 'lazy';
+      faceDiv.appendChild(img);
+      cube.appendChild(faceDiv);
+    });
+
+    ['top', 'bottom'].forEach(face => {
+      const faceDiv = document.createElement('div');
+      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+      const logo = document.createElement('img');
+      logo.src = '/images/logo.png';
+      logo.alt = 'Tiến Thịnh JSC';
+      faceDiv.appendChild(logo);
+      cube.appendChild(faceDiv);
+    });
+
+    scene.appendChild(cube);
+    item.appendChild(scene);
+
+    const label = document.createElement('span');
+    label.className = 'space-item__label';
+    label.textContent = product.name;
+    item.appendChild(label);
+
+    // Year label
+    const yearLabel = document.createElement('div');
+    yearLabel.className = 'road-cube-year';
+    yearLabel.textContent = ms.year;
+    yearLabel.style.cssText = `
+      position: absolute; font-size: 12px; font-weight: 700; 
+      color: rgba(79, 255, 176, 0.85);
+      text-shadow: 0 0 10px rgba(79,255,176,0.4);
+      letter-spacing: 0.15em; font-family: var(--font-primary);
+      pointer-events: none; white-space: nowrap; text-align: center;
+    `;
+
+    item.addEventListener('click', () => navigateTo('product', product));
+    roadView.appendChild(item);
+    roadView.appendChild(yearLabel);
+
+    obj.el = item;
+    obj.cubeEl = cube;
+    obj.yearEl = yearLabel;
+    roadObjects.push(obj);
+    cubeIndex++;
+  });
+
+  createRoadMilestoneEls();
+
+  // Road flow particles (light streaks on road surface)
+  roadFlowParticles = [];
+  for (let i = 0; i < 60; i++) {
+    roadFlowParticles.push(createFlowParticle());
+  }
+
+  // Ambient particles (floating in space)
+  roadParticles = [];
+  for (let i = 0; i < 80; i++) {
+    roadParticles.push({
+      x: Math.random() * vpW,
+      y: Math.random() * vpH,
+      size: 0.5 + Math.random() * 2,
+      alpha: 0.05 + Math.random() * 0.25,
+      drift: 0.1 + Math.random() * 0.3,
+      driftAngle: Math.random() * Math.PI * 2,
+      twinkle: Math.random() * Math.PI * 2,
+      colorIdx: Math.floor(Math.random() * ROAD_COLORS.length)
+    });
+  }
+
+  // Stars
+  roadStars = [];
+  for (let i = 0; i < 200; i++) {
+    roadStars.push({
+      x: Math.random() * vpW,
+      y: Math.random() * vpH * 0.65,
+      size: 0.3 + Math.random() * 1.5,
+      alpha: 0.1 + Math.random() * 0.6,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.004 + Math.random() * 0.012
+    });
+  }
+
+  roadCameraZ = 0;
+  roadCameraZTarget = 0;
+  roadSpeedBoost = 0;
+  roadScrolledOnce = false;
+  if (roadScrollHint) roadScrollHint.classList.remove('hidden');
+
+  roadInitialized = true;
+}
+
+function createFlowParticle() {
+  return {
+    t: Math.random(), // position along road (0=far, 1=near)
+    speed: 0.001 + Math.random() * 0.004,
+    lateralOffset: (Math.random() - 0.5) * 0.8, // -0.4 to 0.4 across road
+    size: 1 + Math.random() * 3,
+    alpha: 0.15 + Math.random() * 0.45,
+    colorIdx: Math.floor(Math.random() * ROAD_COLORS.length),
+    trail: 0.02 + Math.random() * 0.04
+  };
+}
+
+function createRoadMilestoneEls() {
+  if (!roadMilestones) return;
+  roadMilestones.innerHTML = '';
+  roadMilestoneEls = [];
+
+  // Build product lookup for milestone labels (by id + slug)
+  const productMap = {};
+  staticProducts.forEach(p => { productMap[p.id] = p; });
+  products.forEach(p => {
+    productMap[p.id] = p;
+    if (p.slug) productMap[p.slug] = p;
+  });
+
+  ROAD_MILESTONE_DATA.forEach((ms, idx) => {
+    const el = document.createElement('div');
+    el.className = 'road-milestone';
+    if (ms.cubeId) el.classList.add('road-milestone--has-cube');
+    
+    // Show event index if multiple events in same year
+    const eventLabel = ms.totalInYear > 1 ? ` (${ms.eventIndex + 1}/${ms.totalInYear})` : '';
+    const product = ms.cubeId ? productMap[ms.cubeId] : null;
+    const projectLabel = product ? `<div class="road-milestone__project">${product.name}</div>` : '';
+    
+    el.innerHTML = `
+      <div class="road-milestone__dot"></div>
+      <div class="road-milestone__year">${ms.year}</div>
+      <div class="road-milestone__title">${ms.title}</div>
+      <div class="road-milestone__content">
+        <h4>${ms.year} — ${ms.title}${eventLabel}</h4>
+        <p>${ms.desc}</p>
+        ${projectLabel}
+      </div>
+    `;
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasActive = el.classList.contains('active');
+      roadMilestoneEls.forEach(m => m.el.classList.remove('active'));
+      if (!wasActive) el.classList.add('active');
+    });
+
+    roadMilestones.appendChild(el);
+    roadMilestoneEls.push({ el, data: ms });
+  });
+}
+
+// ---- CANVAS DRAWING ----
+
+function drawRoad() {
+  const ctx = roadCtx;
+  const cw = roadCanvas.width;
+  const ch = roadCanvas.height;
+  const scaleX = cw / vpW;
+  const scaleY = ch / vpH;
+
+  ctx.fillStyle = 'rgba(6, 8, 15, 0.3)';
+  ctx.fillRect(0, 0, cw, ch);
+
+  drawStarField(ctx, cw, ch, scaleX, scaleY);
+  drawRoadSurface(ctx, cw, ch, scaleX, scaleY);
+  drawRoadFlowParticles(ctx, cw, ch, scaleX, scaleY);
+  drawAmbientParticles(ctx, cw, ch, scaleX, scaleY);
+}
+
+// Road surface — neon edge lines with subtle fill
+function drawRoadSurface(ctx, cw, ch, scaleX, scaleY) {
+  if (roadPathCache.length < 2) return;
+
+  const pulse = 0.8 + Math.sin(performance.now() * 0.0008) * 0.2;
+  const camOffset = (roadCameraZ % ROAD_TOTAL_DEPTH) / ROAD_TOTAL_DEPTH;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  // ---- Road fill (very subtle dark surface) ----
+  ctx.beginPath();
+  for (let i = 0; i < roadPathCache.length; i++) {
+    const p = roadPathCache[i];
+    const x = p.cx * vpW * scaleX;
+    const y = p.cy * vpH * scaleY;
+    const hw = p.width * 0.5 * scaleX;
+    if (i === 0) ctx.moveTo(x - hw, y);
+    else ctx.lineTo(x - hw, y);
+  }
+  for (let i = roadPathCache.length - 1; i >= 0; i--) {
+    const p = roadPathCache[i];
+    const x = p.cx * vpW * scaleX;
+    const y = p.cy * vpH * scaleY;
+    const hw = p.width * 0.5 * scaleX;
+    ctx.lineTo(x + hw, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(15, 25, 40, 0.35)';
+  ctx.fill();
+
+  // ---- Left edge line (neon glow) ----
+  for (const pass of [{w: 12, a: 0.06}, {w: 5, a: 0.2}, {w: 1.8, a: 0.7}]) {
+    ctx.beginPath();
+    for (let i = 0; i < roadPathCache.length; i++) {
+      const p = roadPathCache[i];
+      const x = (p.cx * vpW - p.width * 0.5) * scaleX;
+      const y = p.cy * vpH * scaleY;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = getRoadColor(pass.a * pulse);
+    ctx.lineWidth = pass.w * scaleX;
+    ctx.shadowColor = getRoadColor(0.3);
+    ctx.shadowBlur = pass.w > 5 ? 20 * scaleX : 0;
+    ctx.stroke();
+  }
+
+  // ---- Right edge line (neon glow) ----
+  for (const pass of [{w: 12, a: 0.06}, {w: 5, a: 0.2}, {w: 1.8, a: 0.7}]) {
+    ctx.beginPath();
+    for (let i = 0; i < roadPathCache.length; i++) {
+      const p = roadPathCache[i];
+      const x = (p.cx * vpW + p.width * 0.5) * scaleX;
+      const y = p.cy * vpH * scaleY;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = getRoadColor(pass.a * pulse);
+    ctx.lineWidth = pass.w * scaleX;
+    ctx.shadowColor = getRoadColor(0.3);
+    ctx.shadowBlur = pass.w > 5 ? 20 * scaleX : 0;
+    ctx.stroke();
+  }
+
+  ctx.shadowBlur = 0;
+
+  // ---- Center dashes (animated) ----
+  const dashLength = 0.025;
+  const gapLength = 0.025;
+  const dashScroll = (performance.now() * 0.00015 + camOffset) % 1;
+
+  ctx.setLineDash([]);
+  for (let tStart = -dashScroll; tStart < 1; tStart += dashLength + gapLength) {
+    const t0 = Math.max(0, tStart);
+    const t1 = Math.min(1, tStart + dashLength);
+    if (t1 <= t0) continue;
+
+    const i0 = Math.floor(t0 * ROAD_SEGMENTS);
+    const i1 = Math.ceil(t1 * ROAD_SEGMENTS);
+    if (i0 >= roadPathCache.length || i1 >= roadPathCache.length) continue;
+
+    ctx.beginPath();
+    for (let i = i0; i <= i1 && i < roadPathCache.length; i++) {
+      const p = roadPathCache[i];
+      const x = p.cx * vpW * scaleX;
+      const y = p.cy * vpH * scaleY;
+      if (i === i0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    const midT = (t0 + t1) / 2;
+    const fadeAlpha = midT < 0.15 ? midT / 0.15 : 1;
+    const dashW = getRoadWidthAt(midT) * 0.015;
+    ctx.strokeStyle = `rgba(255,255,255,${0.25 * pulse * fadeAlpha})`;
+    ctx.lineWidth = Math.max(dashW, 0.5) * scaleX;
+    ctx.stroke();
+  }
+
+  // ---- Vanishing point glow ----
+  const vpx = roadPathCache[0].cx * vpW * scaleX;
+  const vpy = roadPathCache[0].cy * vpH * scaleY;
+  const vpGrad = ctx.createRadialGradient(vpx, vpy, 0, vpx, vpy, 80 * scaleX);
+  vpGrad.addColorStop(0, getRoadColor(0.15 * pulse));
+  vpGrad.addColorStop(0.4, getRoadColor(0.05 * pulse));
+  vpGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = vpGrad;
+  ctx.fillRect(vpx - 80 * scaleX, vpy - 80 * scaleY, 160 * scaleX, 160 * scaleY);
+
+  ctx.restore();
+}
+
+// Flow particles — light streaks traveling along road
+function drawRoadFlowParticles(ctx, cw, ch, scaleX, scaleY) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  for (const fp of roadFlowParticles) {
+    fp.t += fp.speed;
+    if (fp.t > 1) {
+      fp.t = 0;
+      fp.lateralOffset = (Math.random() - 0.5) * 0.8;
+      fp.speed = 0.001 + Math.random() * 0.004;
+    }
+
+    const p = getRoadCenterAt(fp.t);
+    const w = getRoadWidthAt(fp.t);
+    const x = (p.x * vpW + fp.lateralOffset * w * 0.5) * scaleX;
+    const y = p.y * vpH * scaleY;
+
+    // Trail
+    const p2 = getRoadCenterAt(Math.max(0, fp.t - fp.trail));
+    const w2 = getRoadWidthAt(Math.max(0, fp.t - fp.trail));
+    const x2 = (p2.x * vpW + fp.lateralOffset * w2 * 0.5) * scaleX;
+    const y2 = p2.y * vpH * scaleY;
+
+    const c = ROAD_COLORS[fp.colorIdx];
+    const fadeAlpha = fp.t < 0.1 ? fp.t / 0.1 : 1;
+    const a = fp.alpha * fadeAlpha;
+    const sz = fp.size * fp.t * scaleX;
+
+    if (sz < 0.3) continue;
+
+    const grad = ctx.createLinearGradient(x2, y2, x, y);
+    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${a})`);
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = sz;
+    ctx.stroke();
+
+    // Bright head
+    ctx.beginPath();
+    ctx.arc(x, y, sz * 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${a * 0.8})`;
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// Stars
+function drawStarField(ctx, cw, ch, scaleX, scaleY) {
+  for (const star of roadStars) {
+    star.twinkle += star.twinkleSpeed;
+    const twinkle = (Math.sin(star.twinkle) + 1) * 0.5;
+    const a = star.alpha * twinkle;
+    if (a < 0.03) continue;
+    const sx = star.x * scaleX;
+    const sy = star.y * scaleY;
+    ctx.beginPath();
+    ctx.arc(sx, sy, star.size * scaleX, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200, 220, 255, ${a})`;
+    ctx.fill();
+  }
+}
+
+// Ambient particles — floating in space
+function drawAmbientParticles(ctx, cw, ch, scaleX, scaleY) {
+  for (const p of roadParticles) {
+    p.driftAngle += 0.003;
+    p.x += Math.cos(p.driftAngle) * p.drift;
+    p.y += Math.sin(p.driftAngle) * p.drift * 0.5;
+    if (p.x < -20) p.x = vpW + 20;
+    if (p.x > vpW + 20) p.x = -20;
+    if (p.y < -20) p.y = vpH + 20;
+    if (p.y > vpH + 20) p.y = -20;
+
+    p.twinkle += 0.02;
+    const twinkle = (Math.sin(p.twinkle) + 1) * 0.5;
+    const a = p.alpha * twinkle;
+    if (a < 0.02) continue;
+
+    const c = ROAD_COLORS[p.colorIdx];
+    const sx = p.x * scaleX;
+    const sy = p.y * scaleY;
+
+    ctx.beginPath();
+    ctx.arc(sx, sy, p.size * scaleX, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    ctx.fill();
+  }
+}
+
+// ---- UPDATE: Cubes on road path ----
+
+function updateRoadCubes() {
+  const now = performance.now();
+
+  for (const obj of roadObjects) {
+    // Map object's roadZ to screen position based on camera
+    // NO wrapping — cubes stay at their milestone Z
+    const relZ = obj.roadZ - roadCameraZ;
+    
+    // For circular road behavior, wrap relative Z
+    let effZ = ((relZ % ROAD_TOTAL_DEPTH) + ROAD_TOTAL_DEPTH) % ROAD_TOTAL_DEPTH;
+    const t = 1 - (effZ / ROAD_TOTAL_DEPTH); // 1=near, 0=far
+
+    // Only show objects in visible range
+    if (t < 0.05 || t > 0.98) {
+      obj.el.style.opacity = '0';
+      obj.el.style.pointerEvents = 'none';
+      obj.yearEl.style.opacity = '0';
+      continue;
+    }
+
+    const center = getRoadCenterAt(t);
+    const roadW = getRoadWidthAt(t);
+
+    // Gentle sway (subtle, deterministic)
+    obj.sway += obj.swaySpeed;
+    const sway = Math.sin(obj.sway) * 0.03;
+
+    // Position cube on road — offset to side (at road edge, tied to milestone)
+    const lateralOff = obj.side * (obj.offset + sway) * roadW * 0.5;
+    const cubeX = center.x * vpW + lateralOff;
+    const cubeY = center.y * vpH;
+
+    // Scale by depth
+    const depthScale = 0.2 + t * 0.8;
+    const cubeScale = depthScale * 0.75;
+
+    // Fade at edges
+    let a = 1;
+    if (t < 0.15) a = (t - 0.05) / 0.1;
+    if (t > 0.9) a = (0.98 - t) / 0.08;
+    if (a <= 0) {
+      obj.el.style.opacity = '0';
+      obj.el.style.pointerEvents = 'none';
+      obj.yearEl.style.opacity = '0';
+      continue;
+    }
+
+    const halfCube = obj.cubeSize * 0.5 * cubeScale;
+    obj.el.style.transform = `translate3d(${cubeX - halfCube}px, ${cubeY - halfCube}px, 0) scale(${cubeScale})`;
+    obj.el.style.opacity = a.toFixed(3);
+    obj.el.style.zIndex = Math.floor(t * 100);
+    obj.el.style.pointerEvents = a > 0.3 ? 'auto' : 'none';
+
+    // Rotate cube (slow auto-rotation)
+    if (obj.cubeEl) {
+      const autoRot = (now * 0.012 + obj.colorPhase * 50) % 360;
+      obj.cubeEl.style.transform = `rotateX(-10deg) rotateY(${autoRot}deg)`;
+    }
+
+    // Year label
+    obj.yearEl.style.transform = `translate3d(${cubeX - 20}px, ${cubeY + halfCube + 6}px, 0) scale(${Math.min(cubeScale, 1)})`;
+    obj.yearEl.style.opacity = (a * 0.85).toFixed(3);
+  }
+}
+
+function updateRoadMilestones() {
+  for (const ms of roadMilestoneEls) {
+    // Stagger events within the same year along Z
+    const baseZ = yearToRoadZ(ms.data.year);
+    const stagger = ms.data.totalInYear > 1 ? ms.data.eventIndex * 180 : 0;
+    const msZ = baseZ + stagger;
+
+    const relZ = msZ - roadCameraZ;
+    let effZ = ((relZ % ROAD_TOTAL_DEPTH) + ROAD_TOTAL_DEPTH) % ROAD_TOTAL_DEPTH;
+    const t = 1 - (effZ / ROAD_TOTAL_DEPTH);
+
+    if (t < 0.08 || t > 0.95) {
+      ms.el.style.opacity = '0';
+      ms.el.style.pointerEvents = 'none';
+      continue;
+    }
+
+    const center = getRoadCenterAt(t);
+    const roadW = getRoadWidthAt(t);
+    const depthScale = 0.3 + t * 0.7;
+
+    // Alternate milestones left/right of road
+    const msIdx = ROAD_MILESTONE_DATA.indexOf(ms.data);
+    const side = (msIdx % 2 === 0) ? -1 : 1;
+    const offset = roadW * 0.55 * side;
+
+    const mx = center.x * vpW + offset;
+    const my = center.y * vpH;
+
+    let a = 1;
+    if (t < 0.2) a = (t - 0.08) / 0.12;
+    if (t > 0.85) a = (0.95 - t) / 0.1;
+    if (a <= 0) {
+      ms.el.style.opacity = '0';
+      ms.el.style.pointerEvents = 'none';
+      continue;
+    }
+
+    ms.el.style.transform = `translate3d(${mx - 50}px, ${my - 15}px, 0) scale(${Math.min(depthScale, 1.1)})`;
+    ms.el.style.opacity = a.toFixed(3);
+    ms.el.style.pointerEvents = a > 0.3 ? 'auto' : 'none';
+    ms.el.style.zIndex = Math.floor(t * 100 + 50);
+  }
+}
+
+// ---- ANIMATION LOOP ----
+
+function roadAnimTick() {
+  if (state.currentPage !== 'home' || state.currentView !== 'road') {
+    roadRAF = null;
+    return;
+  }
+
+  const speed = ROAD_AUTO_SPEED + roadSpeedBoost;
+  roadCameraZTarget += speed;
+
+  // Wrap around
+  if (roadCameraZTarget > ROAD_TOTAL_DEPTH * 2) roadCameraZTarget -= ROAD_TOTAL_DEPTH;
+  if (roadCameraZTarget < -ROAD_TOTAL_DEPTH) roadCameraZTarget += ROAD_TOTAL_DEPTH;
+
+  roadCameraZ += (roadCameraZTarget - roadCameraZ) * 0.12;
+  roadSpeedBoost *= ROAD_BOOST_DECAY;
+  if (Math.abs(roadSpeedBoost) < 0.01) roadSpeedBoost = 0;
+
+  roadColorPhase += 0.0006;
+
+  drawRoad();
+  updateRoadCubes();
+  updateRoadMilestones();
+
+  roadRAF = requestAnimationFrame(roadAnimTick);
+}
+
+function startRoadAnimation() {
+  if (roadRAF) cancelAnimationFrame(roadRAF);
+  roadRAF = requestAnimationFrame(roadAnimTick);
+}
+
+function stopRoadAnimation() {
+  if (roadRAF) {
+    cancelAnimationFrame(roadRAF);
+    roadRAF = null;
+  }
+}
+
+function setupRoadScroll() {
+  window.addEventListener('wheel', (e) => {
+    if (state.currentPage !== 'home' || state.currentView !== 'road') return;
+    e.preventDefault();
+    roadSpeedBoost += e.deltaY * ROAD_SCROLL_MULT;
+    roadSpeedBoost = Math.max(-ROAD_MAX_SPEED, Math.min(ROAD_MAX_SPEED, roadSpeedBoost));
+    if (!roadScrolledOnce) {
+      roadScrolledOnce = true;
+      if (roadScrollHint) roadScrollHint.classList.add('hidden');
+    }
+  }, { passive: false });
+}
+
+function setHeaderRoadMode(active) {
+  if (!header) return;
+  if (active) {
+    header.classList.add('header--road-mode');
+    document.body.classList.add('road-active');
+  } else {
+    header.classList.remove('header--road-mode');
+    document.body.classList.remove('road-active');
+  }
+}
+
+
+// ============================================
+// CELEBRATION OVERLAY — Logo Click in Road Mode
+// ============================================
+
+let celebrationActive = false;
+let celebrationRAF = null;
+
+function initCelebration() {
+  const logoLink = document.getElementById('logoLink');
+  const overlay = document.getElementById('celebrationOverlay');
+  if (!logoLink || !overlay) return;
+
+  logoLink.addEventListener('click', (e) => {
+    // Only trigger in road mode
+    if (!header || !header.classList.contains('header--road-mode')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (celebrationActive) return;
+    showCelebration();
+  });
+
+  overlay.addEventListener('click', () => {
+    hideCelebration();
+  });
+}
+
+function showCelebration() {
+  const overlay = document.getElementById('celebrationOverlay');
+  if (!overlay) return;
+  celebrationActive = true;
+  overlay.classList.add('active');
+  startConfetti();
+  playCelebrationSound();
+}
+
+function hideCelebration() {
+  const overlay = document.getElementById('celebrationOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  celebrationActive = false;
+  if (celebrationRAF) {
+    cancelAnimationFrame(celebrationRAF);
+    celebrationRAF = null;
+  }
+}
+
+// Confetti particle engine
+function startConfetti() {
+  const canvas = document.getElementById('celebrationCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = [
+    '#FFD700', '#FFA500', '#FF6347', '#FF1493',
+    '#00CED1', '#7CFC00', '#FF69B4', '#4169E1',
+    '#FFD700', '#FFD700', '#FFA500', '#FFFFFF'
+  ];
+
+  const particles = [];
+  const PARTICLE_COUNT = 150;
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.5,
+      w: 4 + Math.random() * 8,
+      h: 3 + Math.random() * 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 3,
+      vy: 1.5 + Math.random() * 3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.15,
+      opacity: 0.7 + Math.random() * 0.3,
+      wobblePhase: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.02 + Math.random() * 0.03,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle'
+    });
+  }
+
+  function animate() {
+    if (!celebrationActive) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach(p => {
+      p.wobblePhase += p.wobbleSpeed;
+      p.x += p.vx + Math.sin(p.wobblePhase) * 0.8;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      p.vy += 0.02; // gravity
+      p.opacity -= 0.001;
+
+      // Recycle
+      if (p.y > canvas.height + 20 || p.opacity <= 0) {
+        p.x = Math.random() * canvas.width;
+        p.y = -10 - Math.random() * 40;
+        p.vy = 1.5 + Math.random() * 3;
+        p.opacity = 0.7 + Math.random() * 0.3;
+      }
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = Math.max(0, p.opacity);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    celebrationRAF = requestAnimationFrame(animate);
+  }
+
+  animate();
+}
+
+// Celebration sound using Web Audio API
+function playCelebrationSound() {
+  let ctx;
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) { return; }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.25;
+  masterGain.connect(ctx.destination);
+
+  // Fanfare chord: C major with octave
+  const fanfareNotes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+  fanfareNotes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05 + i * 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5 + i * 0.15);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(ctx.currentTime + i * 0.08);
+    osc.stop(ctx.currentTime + 3);
+  });
+
+  // Sparkle arpeggios — high pitched tinkles
+  const sparkleNotes = [1046.5, 1318.5, 1568, 2093, 1568, 2093, 2637];
+  sparkleNotes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    const gain = ctx.createGain();
+    const startTime = ctx.currentTime + 0.3 + i * 0.12;
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.08, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.6);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(startTime);
+    osc.stop(startTime + 0.8);
+  });
+
+  // Warm pad swell
+  const pad = ctx.createOscillator();
+  pad.type = 'triangle';
+  pad.frequency.value = 130.81; // C3
+
+  const padGain = ctx.createGain();
+  padGain.gain.setValueAtTime(0, ctx.currentTime);
+  padGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.5);
+  padGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 2);
+  padGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4);
+
+  pad.connect(padGain);
+  padGain.connect(masterGain);
+  pad.start(ctx.currentTime);
+  pad.stop(ctx.currentTime + 4.5);
+
+  // Cleanup after sound
+  setTimeout(() => { try { ctx.close(); } catch(e) {} }, 5000);
+}
+
+
+
+
+// ============================================
+// AMBIENT SOUND — Web Audio API Generative
+// ============================================
+
+function initAmbientSound() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) {
+    console.warn('Web Audio API not supported');
+    return;
+  }
+
+  ambientGain = audioCtx.createGain();
+  ambientGain.gain.value = 0;
+  ambientGain.connect(audioCtx.destination);
+
+  // Layer 1: Low drone pad — two detuned oscillators
+  const drone1 = audioCtx.createOscillator();
+  drone1.type = 'sine';
+  drone1.frequency.value = 55; // A1
+
+  const drone2 = audioCtx.createOscillator();
+  drone2.type = 'sine';
+  drone2.frequency.value = 58; // slightly detuned for warmth
+
+  const drone3 = audioCtx.createOscillator();
+  drone3.type = 'sine';
+  drone3.frequency.value = 82.5; // E2 — perfect fifth
+
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.06;
+
+  // Slow LFO on drone volume for breathing effect
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.08; // very slow ~12s cycle
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0.015;
+  lfo.connect(lfoGain);
+  lfoGain.connect(droneGain.gain);
+  lfo.start();
+
+  drone1.connect(droneGain);
+  drone2.connect(droneGain);
+  drone3.connect(droneGain);
+  droneGain.connect(ambientGain);
+  drone1.start();
+  drone2.start();
+  drone3.start();
+
+  ambientNodes.push(drone1, drone2, drone3, lfo);
+
+  // Layer 2: Shimmer — filtered white noise
+  const bufferSize = audioCtx.sampleRate * 3;
+  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * 0.4;
+  }
+
+  const noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
+
+  const bandpass = audioCtx.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = 3000;
+  bandpass.Q.value = 0.3;
+
+  const shimmerGain = audioCtx.createGain();
+  shimmerGain.gain.value = 0.008;
+
+  noiseSource.connect(bandpass);
+  bandpass.connect(shimmerGain);
+  shimmerGain.connect(ambientGain);
+  noiseSource.start();
+
+  ambientNodes.push(noiseSource);
+
+  // Layer 3: Occasional chime (scheduled)
+  scheduleChime();
+}
+
+function scheduleChime() {
+  if (!audioCtx || !roadSoundOn) return;
+
+  const chimeFreqs = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
+  const freq = chimeFreqs[Math.floor(Math.random() * chimeFreqs.length)];
+
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+
+  const chimeGain = audioCtx.createGain();
+  const now = audioCtx.currentTime;
+  chimeGain.gain.setValueAtTime(0, now);
+  chimeGain.gain.linearRampToValueAtTime(0.015, now + 0.3);
+  chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 3);
+
+  osc.connect(chimeGain);
+  chimeGain.connect(ambientGain);
+  osc.start(now);
+  osc.stop(now + 3.5);
+
+  // Schedule next chime at random interval (4-10s)
+  const nextDelay = 4000 + Math.random() * 6000;
+  setTimeout(scheduleChime, nextDelay);
+}
+
+function startAmbientSound() {
+  if (!audioCtx) initAmbientSound();
+  if (!audioCtx || !ambientGain) return;
+
+  roadSoundOn = true;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Fade in over 3 seconds
+  ambientGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  ambientGain.gain.setValueAtTime(ambientGain.gain.value, audioCtx.currentTime);
+  ambientGain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 3);
+
+  if (roadSoundToggle) roadSoundToggle.classList.remove('muted');
+}
+
+function stopAmbientSound() {
+  if (!audioCtx || !ambientGain) return;
+
+  roadSoundOn = false;
+  // Fade out over 1 second
+  ambientGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  ambientGain.gain.setValueAtTime(ambientGain.gain.value, audioCtx.currentTime);
+  ambientGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+
+  if (roadSoundToggle) roadSoundToggle.classList.add('muted');
+}
+
+function setupRoadSoundToggle() {
+  if (!roadSoundToggle) return;
+  roadSoundToggle.classList.add('muted'); // start muted
+  roadSoundToggle.addEventListener('click', () => {
+    if (roadSoundOn) {
+      stopAmbientSound();
+    } else {
+      startAmbientSound();
+    }
+  });
+}
+
+// ============================================
 // STATS COUNTER (count-up on first view)
 // ============================================
 function setupStatsCounter() {
@@ -705,7 +1856,10 @@ function animateNumber(el) {
 // ============================================
 function setupViewToggle() {
   btnSpace.addEventListener('click', () => switchView('space'));
+  if (btnRoad) btnRoad.addEventListener('click', () => switchView('road'));
   btnGrid.addEventListener('click', () => switchView('grid'));
+  setupRoadSoundToggle();
+  setupRoadScroll();
 }
 
 function switchView(view) {
@@ -713,17 +1867,39 @@ function switchView(view) {
 
   // Update buttons
   btnSpace.classList.toggle('active', view === 'space');
+  if (btnRoad) btnRoad.classList.toggle('active', view === 'road');
   btnGrid.classList.toggle('active', view === 'grid');
 
   // Update views
   spaceView.classList.toggle('active', view === 'space');
+  if (roadView) roadView.classList.toggle('active', view === 'road');
   gridView.classList.toggle('active', view === 'grid');
 
+  // Space mode
   if (view === 'space') {
     startAutoFly();
-  } else {
+    stopRoadAnimation();
+    setHeaderRoadMode(false);
+    stopAmbientSound();
+    document.body.classList.remove('tree-mode');
+  } else if (view === 'road') {
+    // Road mode
     stopAutoFly();
     spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    if (!roadInitialized) createRoadView();
+    startRoadAnimation();
+    setHeaderRoadMode(true);
+    document.body.classList.add('tree-mode');
+  } else {
+    // Grid mode
+    stopAutoFly();
+    stopRoadAnimation();
+    setHeaderRoadMode(false);
+    stopAmbientSound();
+    document.body.classList.remove('tree-mode');
+    spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   }
 }
 
@@ -811,7 +1987,7 @@ function createSlider(product) {
   // Drag hint
   const hint = document.createElement('div');
   hint.className = 'cube-hint';
-  hint.textContent = '🔄 Kéo chuột để xoay 3D';
+  hint.textContent = t('product.dragHint', '🔄 Kéo chuột để xoay 3D');
 
   scene.appendChild(shadow);
   scene.appendChild(cube);
@@ -978,7 +2154,7 @@ function updateAccordions(product) {
   // Update specs accordion
   const specsAccordion = document.querySelector('[data-section="specs"] .accordion__body p');
   if (specsAccordion) {
-    specsAccordion.textContent = product.specs || 'Thông số kỹ thuật sẽ được cập nhật.';
+    specsAccordion.textContent = product.specs || t('product.specs.desc', 'Thông số kỹ thuật sẽ được cập nhật.');
   }
 }
 
@@ -1022,7 +2198,7 @@ function setupContactForm() {
       e.preventDefault();
       const submitBtn = form.querySelector('.contact-form__submit');
       const originalText = submitBtn.textContent;
-      submitBtn.textContent = 'Đang gửi...';
+      submitBtn.textContent = t('contact.submitting', 'Đang gửi...');
       submitBtn.disabled = true;
 
       try {
@@ -1034,7 +2210,7 @@ function setupContactForm() {
           message: form.querySelector('#contactMessage').value,
         });
 
-        submitBtn.textContent = '✓ Đã gửi thành công!';
+        submitBtn.textContent = t('contact.success', '✓ Đã gửi thành công!');
         submitBtn.style.background = '#228B22';
         submitBtn.style.borderColor = '#228B22';
 
@@ -1046,7 +2222,7 @@ function setupContactForm() {
           submitBtn.style.borderColor = '';
         }, 2000);
       } catch (err) {
-        submitBtn.textContent = '✗ Lỗi gửi, thử lại';
+        submitBtn.textContent = t('contact.error', '✗ Lỗi gửi, thử lại');
         submitBtn.style.background = '#c0392b';
         submitBtn.disabled = false;
         setTimeout(() => {
@@ -1351,7 +2527,7 @@ async function renderNews() {
 
   // === Featured Article (Split: Gallery Left + Content Right) ===
   const images = featured.images?.length ? featured.images : [featured.featured_image || '/images/factory-interior.png'];
-  const dateStr = featured.published_at ? new Date(featured.published_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const dateStr = featured.published_at ? new Date(featured.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   featuredContainer.innerHTML = `
     <div class="news-featured reveal" data-post-id="${featured.id}">
@@ -1386,7 +2562,7 @@ async function renderNews() {
           </span>
         </div>
         <a class="news-featured__cta" data-post-id="${featured.id}">
-          Đọc bài viết
+          ${t('news.readArticle', 'Đọc bài viết')}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
       </div>
@@ -1409,7 +2585,7 @@ async function renderNews() {
   // === Grid Cards (remaining posts) ===
   newsGrid.innerHTML = '';
   rest.forEach(post => {
-    const dateDisplay = post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN') : '';
+    const dateDisplay = post.published_at ? new Date(post.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN') : '';
     const article = document.createElement('article');
     article.className = 'news-card reveal';
     article.dataset.postId = post.id;
@@ -1424,7 +2600,7 @@ async function renderNews() {
         <p class="news-card__excerpt">${post.excerpt || ''}</p>
         <div class="news-card__footer">
           <span class="news-card__readmore">
-            Đọc thêm
+            ${t('news.readMore', 'Đọc thêm')}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </span>
         </div>
@@ -1466,14 +2642,14 @@ function renderPostDetail(post) {
   if (!container || !post) return;
 
   const images = post.images?.length ? post.images : [post.featured_image || '/images/factory-interior.png'];
-  const dateStr = post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const dateStr = post.published_at ? new Date(post.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   // Get related posts (same category, exclude current)
   const related = allPosts.filter(p => p.id !== post.id).slice(0, 4);
 
   container.innerHTML = `
     <nav class="post-detail__breadcrumb">
-      <a data-page="news">Tin Tức</a>
+      <a data-page="news">${t('news.breadcrumb', 'Tin Tức')}</a>
       <span>›</span>
       ${post.category ? `<a data-page="news">${post.category}</a><span>›</span>` : ''}
       <span>${post.title}</span>
@@ -1520,10 +2696,10 @@ function renderPostDetail(post) {
 
     ${related.length ? `
       <div class="post-detail__related">
-        <h3 class="post-detail__related-title">Bài viết liên quan</h3>
+        <h3 class="post-detail__related-title">${t('news.relatedPosts', 'Bài viết liên quan')}</h3>
         <div class="news-grid">
           ${related.map(r => {
-            const rDate = r.published_at ? new Date(r.published_at).toLocaleDateString('vi-VN') : '';
+            const rDate = r.published_at ? new Date(r.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN') : '';
             return `
               <article class="news-card" data-post-id="${r.id}">
                 <div class="news-card__img">
@@ -1536,7 +2712,7 @@ function renderPostDetail(post) {
                   <p class="news-card__excerpt">${r.excerpt || ''}</p>
                   <div class="news-card__footer">
                     <span class="news-card__readmore">
-                      Đọc thêm
+                      ${t('news.readMore', 'Đọc thêm')}
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </span>
                   </div>
@@ -1581,8 +2757,8 @@ async function renderDocuments() {
     docsContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">📄</div>
-        <h3 class="empty-state__title">Chưa có tài liệu</h3>
-        <p class="empty-state__desc">Tài liệu kỹ thuật sẽ sớm được cập nhật. Vui lòng quay lại sau.</p>
+        <h3 class="empty-state__title">${t('docs.empty', 'Chưa có tài liệu')}</h3>
+        <p class="empty-state__desc">${t('docs.emptyDesc', 'Tài liệu kỹ thuật sẽ sớm được cập nhật. Vui lòng quay lại sau.')}</p>
       </div>
     `;
     return;
@@ -1767,30 +2943,20 @@ async function renderOtherProjectPages() {
   const projectData = await fetchProjects();
   if (!projectData?.length) return;
 
-  // Helper to build a small project grid
+  // Helper to build a small project grid — uses overlay-style hover (matches grid-item)
   function buildProjectGrid(items) {
     return `
       <div class="projects-grid">
         ${items.map(p => `
-          <div class="project-card reveal" data-product-id="${p.id}">
+          <div class="project-card reveal" data-category="${p.category || ''}" data-product-id="${p.id}">
             <div class="project-card__image">
               <img src="${p.image}" alt="${p.name}" loading="lazy" />
-              ${p.category ? `<span class="project-card__category">${p.category}</span>` : ''}
-            </div>
-            <div class="project-card__body">
-              <h3 class="project-card__title">${p.name}</h3>
-              <p class="project-card__subtitle">${p.subtitle || p.description || ''}</p>
-              <div class="project-card__meta">
-                ${p.year ? `
-                  <span class="project-card__meta-item">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    ${p.year}
-                  </span>
-                ` : ''}
-                <span class="project-card__meta-item">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Tiến Thịnh JSC
-                </span>
+              <div class="project-card__overlay">
+                ${p.category ? `<span class="project-card__tag">${p.category}</span>` : ''}
+                <div class="project-card__info">
+                  <h3 class="project-card__title">${p.name}</h3>
+                  <p class="project-card__subtitle">${p.subtitle || p.description || ''} ${p.year ? `— ${p.year}` : ''}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -2040,6 +3206,145 @@ async function applySettings() {
 }
 
 // ============================================
+// NAV i18n — Translate dynamically loaded nav items
+// ============================================
+// Maps data-page values to i18n keys for header nav
+const NAV_I18N_MAP = {
+  'home': 'nav.home',
+  'about-letter': 'nav.about.letter',
+  'about-vision': 'nav.about.vision',
+  'about-values': 'nav.about.values',
+  'history': 'nav.about.history',
+  'about-org': 'nav.about.org',
+  'about-cert': 'nav.about.cert',
+  'about-awards': 'nav.about.awards',
+  'cap-hr': 'nav.cap.hr',
+  'cap-prod': 'nav.cap.prod',
+  'cap-construct': 'nav.cap.construct',
+  'cap-factory': 'nav.cap.factory',
+  'cap-safety': 'nav.cap.safety',
+  'svc-general': 'nav.svc.general',
+  'svc-fdi': 'nav.svc.fdi',
+  'svc-steel': 'nav.svc.steel',
+  'svc-design': 'nav.svc.design',
+  'svc-trade': 'nav.svc.trade',
+  'proj-done': 'nav.proj.done',
+  'proj-ongoing': 'nav.proj.ongoing',
+  'exhibitions': 'nav.proj.featured',
+  'proj-country': 'nav.proj.country',
+  'proj-field': 'nav.proj.field',
+  'news': 'nav.news.company',
+  'news-site': 'nav.news.site',
+  'news-recruit': 'nav.news.recruit',
+  'news-knowledge': 'nav.news.knowledge',
+  'contact': 'nav.contact',
+  'documents': 'nav.documents',
+};
+
+// Parent nav group titles mapped by known titles in all languages
+const NAV_GROUP_I18N = {
+  // Vietnamese
+  'Giới thiệu': 'nav.about',
+  'GIỚI THIỆU': 'nav.about',
+  'Năng lực': 'nav.capability',
+  'NĂNG LỰC': 'nav.capability',
+  'Dịch vụ': 'nav.services',
+  'DỊCH VỤ': 'nav.services',
+  'Dự án': 'nav.projects',
+  'DỰ ÁN': 'nav.projects',
+  'Tin tức': 'nav.news',
+  'TIN TỨC': 'nav.news',
+  // English
+  'About Us': 'nav.about',
+  'ABOUT US': 'nav.about',
+  'Capability': 'nav.capability',
+  'CAPABILITY': 'nav.capability',
+  'Services': 'nav.services',
+  'SERVICES': 'nav.services',
+  'Projects': 'nav.projects',
+  'PROJECTS': 'nav.projects',
+  'News': 'nav.news',
+  'NEWS': 'nav.news',
+  // Chinese
+  '关于我们': 'nav.about',
+  '实力': 'nav.capability',
+  '服务': 'nav.services',
+  '项目': 'nav.projects',
+  '新闻': 'nav.news',
+};
+
+function applyNavI18n() {
+  // Translate header nav links with data-page
+  document.querySelectorAll('.header__nav-link[data-page], .header__sub-link[data-page]').forEach(el => {
+    const page = el.getAttribute('data-page');
+    const key = NAV_I18N_MAP[page];
+    if (key) {
+      // For parent links that contain svg, only update text node
+      const svg = el.querySelector('svg');
+      if (svg) {
+        const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3);
+        if (textNodes.length) {
+          textNodes[0].textContent = t(key) + ' ';
+        }
+      } else {
+        el.textContent = t(key);
+      }
+    }
+  });
+
+  // Translate parent group titles (e.g., "GIỚI THIỆU" → "ABOUT US" and vice versa)
+  document.querySelectorAll('.header__nav-link:not([data-page])').forEach(el => {
+    const svg = el.querySelector('svg');
+    if (svg) {
+      // Collect group titles from ALL languages
+      const allGroupTitles = {};
+      const langs = Object.keys(translations); // ['vi', 'en', 'zh']
+      const uniqueKeys = [...new Set(Object.values(NAV_GROUP_I18N))];
+      for (const key of uniqueKeys) {
+        for (const lang of langs) {
+          const val = translations[lang]?.[key];
+          if (val) allGroupTitles[val.toUpperCase()] = key;
+        }
+      }
+
+      const textContent = Array.from(el.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim().toUpperCase();
+
+      // Use exact match (after trimming) to avoid false positives with short CJK chars
+      if (allGroupTitles[textContent]) {
+        const key = allGroupTitles[textContent];
+        const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3);
+        if (textNodes.length) {
+          textNodes[0].textContent = t(key) + ' ';
+        }
+      }
+    }
+  });
+
+  // Translate mobile overlay nav group titles
+  document.querySelectorAll('.nav-overlay__group-title').forEach(el => {
+    const txt = el.textContent.trim();
+    const allGroupTitles = {};
+    const langs = Object.keys(translations);
+    const uniqueKeys = [...new Set(Object.values(NAV_GROUP_I18N))];
+    for (const key of uniqueKeys) {
+      for (const lang of langs) {
+        const val = translations[lang]?.[key];
+        if (val) allGroupTitles[val] = key;
+      }
+    }
+    const key = allGroupTitles[txt] || NAV_GROUP_I18N[txt];
+    if (key) el.textContent = t(key);
+  });
+
+  // Translate mobile overlay nav links
+  document.querySelectorAll('.nav-overlay__sub a[data-page], .nav-overlay__links > li > a[data-page]').forEach(el => {
+    const page = el.getAttribute('data-page');
+    const key = NAV_I18N_MAP[page];
+    if (key) el.textContent = t(key);
+  });
+}
+
+// ============================================
 // DYNAMIC NAVIGATION — Build menu from Supabase
 // ============================================
 async function renderNavigation() {
@@ -2142,6 +3447,9 @@ async function renderNavigation() {
       navigateTo(page);
     });
   });
+
+  // Apply i18n translations to dynamically rendered nav items
+  applyNavI18n();
 
   // Re-bind overlay nav links
   document.querySelectorAll('.nav-link').forEach(link => {
@@ -2854,7 +4162,25 @@ function renderTeamSection({ title, content, config }) {
 // INIT
 // ============================================
 async function init() {
+  // Initialize i18n system
+  initI18n();
   setupThemeToggle();
+
+  // Listen for language changes to re-render dynamic content
+  window.addEventListener('langchange', () => {
+    // Re-render dynamic content with new language
+    renderNews();
+    renderDocuments();
+    renderProjectsPage();
+    renderOtherProjectPages();
+    renderNewsSubpages();
+    // Translate navigation items
+    applyNavI18n();
+    // Re-navigate to update title
+    const page = state.currentPage;
+    const title = getRouteTitle(page);
+    document.title = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
+  });
 
   // Fetch real data from Supabase (fall back to static)
   try {
@@ -2883,6 +4209,7 @@ async function init() {
   setupHeaderScroll();
   setupFooterReveal();
   setupFooterCTA();
+  initCelebration();
 
   // Route based on current URL (instead of always going to home)
   initRouter();

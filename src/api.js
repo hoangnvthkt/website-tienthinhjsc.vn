@@ -35,6 +35,7 @@ export async function fetchProjects() {
 
       return {
         id: p.id,
+        slug: p.slug || p.id?.toString() || '',
         name: p.title,
         subtitle: p.subtitle || '',
         category: p.project_categories?.name || p.category || 'Dự án',
