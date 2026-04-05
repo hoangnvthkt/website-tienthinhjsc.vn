@@ -277,6 +277,48 @@
           <span class="stats-bar__label" data-i18n="stats.staff">Nhân sự</span>
         </div>
       </div>
+      <!-- ═══════════════════════════════════════════════════
+           History 3D — Xoắn Ốc Lịch Sử (standalone section)
+           ═══════════════════════════════════════════════════ -->
+      <section class="history3d-section" id="history3dSection" style="display:none">
+        <!-- Three.js canvas -->
+        <canvas id="h3dCanvas"></canvas>
+
+        <!-- Scroll proxy (drives camera) -->
+        <div class="h3d-scroll-proxy" id="h3dScroll">
+          <div class="h3d-scroll-inner"></div>
+        </div>
+
+        <!-- HTML overlay cards -->
+        <div class="h3d-overlay" id="h3dOverlay"></div>
+
+        <!-- Progress dots sidebar -->
+        <div class="h3d-progress" id="h3dProgress"></div>
+
+        <!-- Section header -->
+        <div class="h3d-header">
+          <div class="h3d-header__tag">TIMELINE</div>
+          <h2 class="h3d-header__title">Hành Trình Phát Triển</h2>
+          <p class="h3d-header__sub">Tiến Thịnh JSC — Từ 2008 đến nay</p>
+        </div>
+
+        <!-- Scroll hint -->
+        <div class="h3d-hint" id="h3dHint">
+          <div class="h3d-hint__mouse">
+            <div class="h3d-hint__wheel"></div>
+          </div>
+          <span>Cuộn để khám phá</span>
+        </div>
+
+        <!-- Center year display -->
+        <div class="h3d-year-display" id="h3dYearDisplay"></div>
+
+        <!-- Close button -->
+        <button class="h3d-close" id="h3dClose" aria-label="Đóng History 3D">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </section>
+
       <!-- View Toggle -->
       <div class="view-toggle" id="viewToggle">
         <button class="view-toggle__btn active" id="btnSpace" data-view="space">
@@ -290,6 +332,10 @@
         <button class="view-toggle__btn" id="btnGrid" data-view="grid">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           <span data-i18n="view.grid">LƯỚI</span>
+        </button>
+        <button class="view-toggle__btn view-toggle__btn--history3d" id="btnHistory3d" data-view="history3d">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2z"/><path d="M12 6v6l4 2"/><path d="M2 12h2M20 12h2M12 2v2M12 20v2"/></svg>
+          <span>LỊCH SỬ 3D</span>
         </button>
       </div>
     </main>
@@ -495,50 +541,47 @@
     <main class="page page--exhibitions" id="page-exhibitions">
       <div class="content-page">
         <div class="content-page__hero">
-          <h1 class="content-page__title">Dự Án Tiêu Biểu</h1>
-          <p class="content-page__intro">Những công trình đáng tự hào — minh chứng cho năng lực và uy tín của Tiến Thịnh JSC trong suốt hành trình phát triển.</p>
+          <div class="fe-badge">⭐ Sự Kiện Tiêu Biểu</div>
+          <h1 class="content-page__title">Sự Kiện &amp; Dự Án Tiêu Biểu</h1>
+          <p class="content-page__intro">Tổng hợp các dự án nổi bật và sự kiện quan trọng — được chọn lọc từ hàng trăm công trình đã triển khai. Dự án hoặc bài viết được đánh dấu ⭐ sẽ tự động xuất hiện tại đây.</p>
         </div>
-        <div class="exhibitions-grid" id="exhibitionsGrid">
-          <div class="exhibition-card">
-            <div class="exhibition-card__img">
-              <img src="/images/steel-warehouse.png" alt="Nhà máy Samsung" loading="lazy" />
-            </div>
-            <div class="exhibition-card__info">
-              <span class="exhibition-card__date">2023</span>
-              <h3 class="exhibition-card__title">Nhà máy Samsung Display — Bắc Ninh</h3>
-              <p class="exhibition-card__desc">Thi công kết cấu thép nhà xưởng 25.000m², khối lượng 3.500 tấn thép. Hoàn thành đúng tiến độ 6 tháng.</p>
-            </div>
-          </div>
-          <div class="exhibition-card">
-            <div class="exhibition-card__img">
-              <img src="/images/steel-bridge.png" alt="Cầu vượt thép" loading="lazy" />
-            </div>
-            <div class="exhibition-card__info">
-              <span class="exhibition-card__date">2022</span>
-              <h3 class="exhibition-card__title">Cầu vượt thép — Quốc lộ 1A</h3>
-              <p class="exhibition-card__desc">Cầu thép dài 180m, tải trọng HL-93. Thiết kế và thi công trọn gói theo tiêu chuẩn TCVN.</p>
-            </div>
-          </div>
-          <div class="exhibition-card">
-            <div class="exhibition-card__img">
-              <img src="/images/solar-steel-frame.png" alt="Điện mặt trời" loading="lazy" />
-            </div>
-            <div class="exhibition-card__info">
-              <span class="exhibition-card__date">2021</span>
-              <h3 class="exhibition-card__title">Nhà máy Điện mặt trời — Ninh Thuận</h3>
-              <p class="exhibition-card__desc">Cung cấp và lắp đặt khung kết cấu thép cho hệ thống pin năng lượng mặt trời 50MW trên diện tích 60ha.</p>
-            </div>
-          </div>
-          <div class="exhibition-card">
-            <div class="exhibition-card__img">
-              <img src="/images/high-rise-steel.png" alt="Cao ốc văn phòng" loading="lazy" />
-            </div>
-            <div class="exhibition-card__info">
-              <span class="exhibition-card__date">2020</span>
-              <h3 class="exhibition-card__title">Tòa nhà văn phòng 25 tầng — Hà Nội</h3>
-              <p class="exhibition-card__desc">Kết cấu thép composite, khối lượng 4.200 tấn. Đạt giải thưởng Công trình chất lượng cao 2020.</p>
-            </div>
-          </div>
+
+        <!-- Filter tabs -->
+        <div class="fe-filters" id="feFilters">
+          <button class="fe-filter active" data-filter="all" id="feFilterAll">
+            <span class="fe-filter__icon">🏆</span> Tất cả
+          </button>
+          <button class="fe-filter" data-filter="project" id="feFilterProject">
+            <span class="fe-filter__icon">🏗️</span> Dự án
+          </button>
+          <button class="fe-filter" data-filter="post" id="feFilterPost">
+            <span class="fe-filter__icon">📰</span> Tin tức
+          </button>
+        </div>
+
+        <!-- Loading state -->
+        <div class="fe-loading" id="feLoading">
+          <div class="fe-loading__spinner"></div>
+          <p>Đang tải sự kiện tiêu biểu...</p>
+        </div>
+
+        <!-- Cards grid -->
+        <div class="fe-grid" id="feGrid" style="display:none"></div>
+
+        <!-- Empty state -->
+        <div class="fe-empty" id="feEmpty" style="display:none">
+          <div class="fe-empty__icon">⭐</div>
+          <h3>Chưa có sự kiện tiêu biểu</h3>
+          <p>Đánh dấu ⭐ cho dự án hoặc bài viết trong Admin Panel để hiển thị tại đây.</p>
+        </div>
+      </div>
+
+      <!-- Detail modal -->
+      <div class="fe-modal" id="feModal" style="display:none" role="dialog" aria-modal="true">
+        <div class="fe-modal__backdrop" id="feModalBackdrop"></div>
+        <div class="fe-modal__box">
+          <button class="fe-modal__close" id="feModalClose" aria-label="Đóng">✕</button>
+          <div class="fe-modal__content" id="feModalContent"></div>
         </div>
       </div>
     </main>

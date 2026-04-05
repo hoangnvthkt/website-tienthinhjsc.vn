@@ -38,13 +38,14 @@ interface FormData {
   country: string
   meta_title: string
   meta_description: string
+  is_featured: boolean
 }
 
 const initial: FormData = {
   title: '', slug: '', subtitle: '', category: '', category_id: '', year: new Date().getFullYear().toString(),
   description: '', specs: '', featured_image: null, status: 'draft', sort_order: 0,
   display_pages: ['proj-done'], country: '',
-  meta_title: '', meta_description: ''
+  meta_title: '', meta_description: '', is_featured: false
 }
 
 export default function ProjectFormPage() {
@@ -72,7 +73,8 @@ export default function ProjectFormPage() {
           sort_order: data.sort_order,
           display_pages: (data as Record<string, unknown>).display_pages as string[] || ['proj-done'],
           country: (data as Record<string, unknown>).country as string || '',
-          meta_title: data.meta_title || '', meta_description: data.meta_description || ''
+          meta_title: data.meta_title || '', meta_description: data.meta_description || '',
+          is_featured: !!(data as Record<string, unknown>).is_featured
         })
         setLoading(false)
       })
@@ -119,6 +121,7 @@ export default function ProjectFormPage() {
       display_pages: form.display_pages,
       country: form.country || null,
       meta_title: form.meta_title || null, meta_description: form.meta_description || null,
+      is_featured: form.is_featured,
       ...(form.status === 'published' ? { published_at: new Date().toISOString() } : {}),
       ...(!isEdit ? { author_id: user?.id } : {}),
     }
@@ -253,6 +256,25 @@ export default function ProjectFormPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Thứ tự sắp xếp</label>
                 <input type="number" value={form.sort_order} onChange={(e) => handleChange('sort_order', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              </div>
+
+              {/* Featured toggle */}
+              <div className="pt-3 border-t border-gray-100">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                    form.is_featured ? 'bg-amber-500' : 'bg-gray-200'
+                  }`}>
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                      form.is_featured ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">⭐ Tiêu biểu</span>
+                    <p className="text-xs text-gray-400 mt-0.5">Hiển thị tại trang Sự Kiện Tiêu Biểu</p>
+                  </div>
+                  <input type="checkbox" className="sr-only" checked={form.is_featured}
+                    onChange={(e) => handleChange('is_featured', e.target.checked as unknown as string)} />
+                </label>
               </div>
             </div>
 

@@ -306,3 +306,38 @@ export async function fetchFeaturedProjects(count = 6) {
     return []
   }
 }
+
+/**
+ * Fetch items tagged as is_featured — both projects and posts
+ * Used by the "Sự Kiện Tiêu Biểu" page
+ */
+export async function fetchFeaturedEvents() {
+  const cacheKey = 'featured_events'
+  if (cache[cacheKey]) return cache[cacheKey]
+
+  try {
+    const [{ data: pProj }, { data: pPost }] = await Promise.all([
+      supabase
+        .from('projects')
+        .select('id,title,subtitle,description,featured_image,category,year,slug,sort_order')
+        .eq('is_featured', true)
+        .eq('status', 'published')
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('posts')
+        .select('id,title,excerpt,content,featured_image,category,published_at,slug')
+        .eq('is_featured', true)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false }),
+    ])
+
+    const projects = (pProj || []).map(p => ({ ...p, _type: 'project' }))
+    const posts    = (pPost || []).map(p => ({ ...p, _type: 'post' }))
+    const result   = [...projects, ...posts]
+
+    cache[cacheKey] = result
+    return result
+  } catch {
+    return []
+  }
+}

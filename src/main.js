@@ -1,7 +1,10 @@
 import './style.css';
 import { products as staticProducts } from './data.js';
-import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects, fetchPages } from './api.js';
+import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact, fetchNavigation, fetchPageSections, fetchFeaturedProjects, fetchPages, fetchFeaturedEvents } from './api.js';
 import { t, getLang, setLang, initI18n, getRouteTitle, translations } from './i18n.js';
+import { initChatbot } from './chatbot.js';
+import { initHistory3D, destroyHistory3D } from './history3d.js';
+
 
 // ============================================
 // APP STATE
@@ -54,6 +57,9 @@ const gridView = $('#gridView');
 const btnSpace = $('#btnSpace');
 const btnGrid = $('#btnGrid');
 const viewToggle = $('#viewToggle');
+const btnHistory3d = $('#btnHistory3d');
+const history3dSection = $('#history3dSection');
+let history3dLoaded = false;
 
 const backBtn = $('#backBtn');
 const productSlider = $('#productSlider');
@@ -1937,6 +1943,12 @@ function setupViewToggle() {
   btnSpace.addEventListener('click', () => switchView('space'));
   if (btnRoad) btnRoad.addEventListener('click', () => switchView('road'));
   btnGrid.addEventListener('click', () => switchView('grid'));
+  if (btnHistory3d) btnHistory3d.addEventListener('click', () => switchView('history3d'));
+
+  // Close button inside History3D section
+  const h3dClose = $('#h3dClose');
+  if (h3dClose) h3dClose.addEventListener('click', () => switchView('space'));
+
   setupRoadSoundToggle();
   setupRoadScroll();
 }
@@ -1948,11 +1960,26 @@ function switchView(view) {
   btnSpace.classList.toggle('active', view === 'space');
   if (btnRoad) btnRoad.classList.toggle('active', view === 'road');
   btnGrid.classList.toggle('active', view === 'grid');
+  if (btnHistory3d) btnHistory3d.classList.toggle('active', view === 'history3d');
 
   // Update views
   spaceView.classList.toggle('active', view === 'space');
   if (roadView) roadView.classList.toggle('active', view === 'road');
   gridView.classList.toggle('active', view === 'grid');
+
+  // History 3D section visibility
+  if (history3dSection) {
+    if (view === 'history3d') {
+      history3dSection.style.display = 'block';
+      // Lazy init Three.js on first open
+      if (!history3dLoaded) {
+        history3dLoaded = true;
+        requestAnimationFrame(() => initHistory3D(history3dSection));
+      }
+    } else {
+      history3dSection.style.display = 'none';
+    }
+  }
 
   // Space mode
   if (view === 'space') {
@@ -1969,6 +1996,16 @@ function switchView(view) {
     startRoadAnimation();
     setHeaderRoadMode(true);
     document.body.classList.add('tree-mode');
+  } else if (view === 'history3d') {
+    // History 3D mode — hide space/road objects
+    stopAutoFly();
+    stopRoadAnimation();
+    setHeaderRoadMode(false);
+    stopAmbientSound();
+    document.body.classList.remove('tree-mode');
+    spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   } else {
     // Grid mode
     stopAutoFly();
@@ -3110,18 +3147,8 @@ async function renderOtherProjectPages() {
     `;
   }
 
-  // "Dự Án Tiêu Biểu" (exhibitions) — filter by display_pages
-  const exhibitionsContainer = document.querySelector('#page-exhibitions #exhibitionsGrid') || document.querySelector('#page-exhibitions .subpage-content');
-  if (exhibitionsContainer) {
-    const featuredProjects = filterByPage('exhibitions');
-    exhibitionsContainer.innerHTML = featuredProjects.length ? buildProjectGrid(featuredProjects) : `
-      <div class="empty-state">
-        <div class="empty-state__icon">⭐</div>
-        <h3 class="empty-state__title">Chưa có dự án tiêu biểu</h3>
-        <p class="empty-state__desc">Thông tin sẽ sớm được cập nhật.</p>
-      </div>
-    `;
-  }
+  // ── "Sự Kiện Tiêu Biểu" — dynamic fetch from is_featured flag ──────────────
+  renderFeaturedEvents();
 
   // "Theo Quốc Gia" — filter by display_pages, group by country
   const countryContainer = document.querySelector('#page-proj-country .subpage-content');
@@ -3148,6 +3175,127 @@ async function renderOtherProjectPages() {
 
   // Re-init scroll reveals
   setTimeout(() => setupScrollReveal(), 150);
+}
+
+// ============================================
+// FEATURED EVENTS PAGE (Sự Kiện Tiêu Biểu)
+// Auto-aggregates is_featured projects + posts
+// ============================================
+async function renderFeaturedEvents() {
+  const grid    = document.getElementById('feGrid');
+  const loading = document.getElementById('feLoading');
+  const empty   = document.getElementById('feEmpty');
+  const modal   = document.getElementById('feModal');
+  const modalContent = document.getElementById('feModalContent');
+  if (!grid) return;
+
+  const allItems = await fetchFeaturedEvents();
+
+  if (loading) loading.style.display = 'none';
+
+  if (!allItems.length) {
+    if (empty) empty.style.display = 'flex';
+    return;
+  }
+
+  let activeFilter = 'all';
+
+  function buildCard(item) {
+    const isProject = item._type === 'project';
+    const img   = item.featured_image || '';
+    const year  = item.year || (item.published_at ? new Date(item.published_at).getFullYear() : '');
+    const label = isProject ? '🏗️ Dự án' : '📰 Tin tức';
+    const labelClass = isProject ? 'fe-card__tag--project' : 'fe-card__tag--post';
+    const title = item.title || '';
+    const desc  = item.subtitle || item.excerpt || item.description || '';
+    return `
+      <div class="fe-card" data-type="${item._type}" data-id="${item.id}">
+        <div class="fe-card__img">
+          ${img ? `<img src="${img}" alt="${title}" loading="lazy" />` : '<div class="fe-card__img-placeholder">🏗️</div>'}
+          <span class="fe-card__tag ${labelClass}">${label}</span>
+        </div>
+        <div class="fe-card__body">
+          ${year ? `<span class="fe-card__year">${year}</span>` : ''}
+          <h3 class="fe-card__title">${title}</h3>
+          ${desc ? `<p class="fe-card__desc">${desc.substring(0, 100)}${desc.length > 100 ? '...' : ''}</p>` : ''}
+          <span class="fe-card__cta">Xem chi tiết →</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderGrid(items) {
+    grid.style.display = items.length ? 'grid' : 'none';
+    empty.style.display = items.length ? 'none' : 'flex';
+    grid.innerHTML = items.map(buildCard).join('');
+
+    // Card click → modal
+    grid.querySelectorAll('.fe-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id   = card.dataset.id;
+        const type = card.dataset.type;
+        const item = allItems.find(x => x.id === id);
+        if (!item || !modal) return;
+        openFeaturedModal(item, modal, modalContent);
+      });
+    });
+  }
+
+  renderGrid(allItems);
+
+  // Filter tabs
+  document.querySelectorAll('.fe-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.fe-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      const filtered = activeFilter === 'all' ? allItems : allItems.filter(x => x._type === activeFilter);
+      renderGrid(filtered);
+    });
+  });
+
+  // Modal close
+  document.getElementById('feModalClose')?.addEventListener('click', () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  });
+  document.getElementById('feModalBackdrop')?.addEventListener('click', () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { modal.style.display = 'none'; document.body.style.overflow = ''; }
+  });
+}
+
+function openFeaturedModal(item, modal, modalContent) {
+  const isProject = item._type === 'project';
+  const img   = item.featured_image || '';
+  const title = item.title || '';
+  const desc  = item.description || item.content || item.excerpt || '';
+  const year  = item.year || (item.published_at ? new Date(item.published_at).toLocaleDateString('vi-VN') : '');
+  const cat   = item.category || '';
+  const slug  = item.slug || '';
+
+  modalContent.innerHTML = `
+    ${img ? `<div class="fe-modal__img"><img src="${img}" alt="${title}" /></div>` : ''}
+    <div class="fe-modal__meta">
+      <span class="fe-card__tag ${isProject ? 'fe-card__tag--project' : 'fe-card__tag--post'}">
+        ${isProject ? '🏗️ Dự án' : '📰 Tin tức'}
+      </span>
+      ${cat ? `<span class="fe-modal__cat">${cat}</span>` : ''}
+      ${year ? `<span class="fe-modal__year">${year}</span>` : ''}
+    </div>
+    <h2 class="fe-modal__title">${title}</h2>
+    <div class="fe-modal__body">${desc.replace(/\n/g, '<br>')}</div>
+    ${slug && isProject ? `
+      <a href="/du-an-da-trien-khai" onclick="navigateTo('product', null); return false;" class="fe-modal__link">
+        Xem trang dự án →
+      </a>` : ''}
+  `;
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
 // ============================================
@@ -4927,4 +5075,7 @@ function hflowOnKeydown(e) {
 }
 
 // Start the app
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  initChatbot();
+});

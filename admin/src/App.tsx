@@ -19,6 +19,8 @@ import DocumentsPage from '@/features/documents/DocumentsPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import UsersPage from '@/features/users/UsersPage'
 import ActivityLogPage from '@/features/activity/ActivityLogPage'
+import ChatAnalyticsPage from '@/features/chat-analytics/ChatAnalyticsPage'
+import HistoryMilestonesPage from '@/features/history-milestones/HistoryMilestonesPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 60 * 5, retry: 1 } },
@@ -59,6 +61,10 @@ export default function App() {
                 <Route path="/users" element={<UsersPage />} />
                 {/* Activity Log */}
                 <Route path="/activity" element={<ActivityLogPage />} />
+                {/* Chat Analytics */}
+                <Route path="/chat-analytics" element={<ChatAnalyticsPage />} />
+                {/* History 3D Milestones */}
+                <Route path="/history-milestones" element={<HistoryMilestonesPage />} />
                 {/* Settings */}
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>

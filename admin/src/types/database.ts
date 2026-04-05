@@ -50,6 +50,132 @@ export type Database = {
         }
         Relationships: []
       }
+      history_milestones: {
+        Row: {
+          id: string
+          year: number
+          title: string
+          description: string | null
+          stat_value: string | null
+          stat_label: string | null
+          image_url: string | null
+          color: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          year: number
+          title: string
+          description?: string | null
+          stat_value?: string | null
+          stat_label?: string | null
+          image_url?: string | null
+          color?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          year?: number
+          title?: string
+          description?: string | null
+          stat_value?: string | null
+          stat_label?: string | null
+          image_url?: string | null
+          color?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          lang: string | null
+          session_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lang?: string | null
+          session_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lang?: string | null
+          session_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_documents: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           company: string | null
@@ -231,6 +357,7 @@ export type Database = {
       }
       page_sections: {
         Row: {
+          col_span: number | null
           config: Json | null
           content: string | null
           created_at: string | null
@@ -245,6 +372,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          col_span?: number | null
           config?: Json | null
           content?: string | null
           created_at?: string | null
@@ -259,6 +387,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          col_span?: number | null
           config?: Json | null
           content?: string | null
           created_at?: string | null
@@ -509,8 +638,10 @@ export type Database = {
           author_id: string | null
           category: string | null
           category_id: string | null
+          country: string | null
           created_at: string
           description: string | null
+          display_pages: string[]
           featured_image: string | null
           id: string
           images: Json | null
@@ -530,8 +661,10 @@ export type Database = {
           author_id?: string | null
           category?: string | null
           category_id?: string | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          display_pages?: string[]
           featured_image?: string | null
           id?: string
           images?: Json | null
@@ -551,8 +684,10 @@ export type Database = {
           author_id?: string | null
           category?: string | null
           category_id?: string | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          display_pages?: string[]
           featured_image?: string | null
           id?: string
           images?: Json | null
@@ -656,6 +791,20 @@ export type Database = {
       generate_slug: { Args: { title: string }; Returns: string }
       increment_download: { Args: { doc_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      match_chatbot_docs: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          category: string
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -788,19 +937,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-// ─── Convenience type aliases ─────────────────────────────────────────
-export type Profile = Tables<'profiles'>
-export type Project = Tables<'projects'>
-export type Post = Tables<'posts'>
-export type Page = Tables<'pages'>
-export type Contact = Tables<'contacts'>
-export type Document = Tables<'documents'>
-export type NavigationItem = Tables<'navigation_items'>
-export type PageSection = Tables<'page_sections'>
-export type Media = Tables<'media'>
-export type ActivityLog = Tables<'activity_logs'>
-export type SiteSetting = Tables<'site_settings'>
-export type PostCategory = Tables<'post_categories'>
-export type ProjectCategory = Tables<'project_categories'>
-export type SectionTemplate = Tables<'section_templates'>

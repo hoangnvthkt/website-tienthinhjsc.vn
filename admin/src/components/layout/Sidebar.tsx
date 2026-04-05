@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText, BookOpen,
-  Mail, FileDown, Image, Settings, LogOut, Tags, Menu, Users, ClipboardList
+  Mail, FileDown, Image, Settings, LogOut, Tags, Menu, Users, ClipboardList, MessageSquare, Clock
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -17,6 +17,8 @@ const navItems = [
   { to: '/media', icon: Image, label: 'Media' },
   { to: '/users', icon: Users, label: 'Người dùng' },
   { to: '/activity', icon: ClipboardList, label: 'Nhật ký' },
+  { to: '/chat-analytics', icon: MessageSquare, label: 'Chat AI' },
+  { to: '/history-milestones', icon: Clock, label: 'Lịch Sử 3D' },
   { to: '/settings', icon: Settings, label: 'Cài đặt' },
 ]
 
