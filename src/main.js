@@ -125,6 +125,85 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
   // Close menu if open
   if (state.menuOpen) toggleMenu();
 
+  // Check if this is a horizontal flow page (Giới thiệu / Năng lực / Dịch vụ)
+  // Convert page ID to slug for checking
+  const pageToSlugForHflow = {
+    // Giới thiệu
+    'about-letter': 'thu-ngo',
+    'about-vision': 'tam-nhin-su-menh',
+    'about-values': 'gia-tri-cot-loi',
+    'history': 'lich-su',
+    'about-org': 'so-do-to-chuc',
+    'about-cert': 'chung-chi',
+    'about-awards': 'giai-thuong',
+    // Năng lực
+    'cap-prod': 'nang-luc-san-xuat',
+    'cap-construct': 'nang-luc-thi-cong',
+    'cap-factory': 'nang-luc-nha-may',
+    'cap-safety': 'an-toan-lao-dong',
+    // Dịch vụ
+    'svc-general': 'tong-thau-xay-dung',
+    'svc-fdi': 'tu-van-fdi',
+    'svc-steel': 'san-xuat-ket-cau-thep',
+    'svc-design': 'tu-van-thiet-ke',
+    'svc-trade': 'kinh-doanh-thuong-mai',
+  };
+
+  const hflowSlug = pageToSlugForHflow[page];
+  if (hflowSlug && typeof buildHflow === 'function') {
+    // Activate horizontal flow instead of normal page navigation
+    state.currentPage = page;
+
+    // Update URL
+    if (pushHistory) {
+      const slug = PAGE_TO_SLUG[page] || '/';
+      const title = getRouteTitle(page);
+      const fullTitle = `${title} — ${SITE_NAME}`;
+      document.title = fullTitle;
+      history.pushState({ page, data: null }, fullTitle, slug);
+    }
+
+    // Hide 3D elements
+    stopAutoFly();
+    stopRoadAnimation();
+    setHeaderRoadMode(false);
+    stopAmbientSound();
+    spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
+    roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
+
+    // Hide all normal pages
+    $$('.page').forEach(p => p.classList.remove('active'));
+
+    // Hide footer in flow mode
+    const footer = $('#siteFooter');
+    if (footer) {
+      footer.classList.remove('footer--revealed');
+      footer.classList.remove('visible');
+    }
+
+    // Build/show horizontal flow
+    buildHflow(hflowSlug);
+    return;
+  }
+
+  // If leaving horizontal flow, destroy it
+  if (hflow.isActive && !hflowSlug) {
+    hflow.isActive = false;
+    if (hflow.container) {
+      hflow.container.classList.remove('active');
+      setTimeout(() => {
+        if (hflow.container) {
+          hflow.container.remove();
+          hflow.container = null;
+          hflow.track = null;
+        }
+      }, 500);
+    }
+    document.removeEventListener('keydown', hflowOnKeydown);
+    document.body.style.overflow = '';
+  }
+
   // Hide all pages
   $$('.page').forEach(p => p.classList.remove('active'));
 
@@ -332,7 +411,7 @@ function setupSearch() {
 // ============================================
 
 const PERSPECTIVE  = 800;
-const BASE_SIZE    = window.innerWidth <= 768 ? 200 : 300; // smaller cubes on mobile
+const BASE_SIZE    = window.innerWidth <= 480 ? 140 : window.innerWidth <= 768 ? 180 : 300;
 const AUTO_SPEED   = 1.2;
 const BOOST_DECAY  = 0.92;
 const Z_NEAR       = 100;
@@ -2268,6 +2347,15 @@ function setupScrollReveal() {
     '.doc-item',
     '.project-filters',
     '.empty-state',
+    // DPR-inspired components
+    '.dpr-split',
+    '.dpr-section',
+    '.dpr-stats',
+    '.dpr-cert-card',
+    '.dpr-award-item',
+    '.dpr-feature',
+    '.dpr-org',
+    '.reveal-stagger',
   ];
 
   const elements = document.querySelectorAll(revealSelectors.join(','));
@@ -2312,12 +2400,12 @@ function setupScrollReveal() {
       }
     });
   }, {
-    threshold: 0.15,
+    threshold: 0.12,
     rootMargin: '0px 0px -40px 0px'
   });
 
   // Observe all reveal elements
-  document.querySelectorAll('.reveal').forEach(el => {
+  document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => {
     revealObserver.observe(el);
   });
 }
@@ -2830,8 +2918,10 @@ async function renderProjectsPage() {
   createSkeletonCards(grid, 6);
 
   try {
-    const projectData = await fetchProjects();
-    if (!projectData?.length) {
+    const allProjects = await fetchProjects();
+    // Filter to only show projects tagged for this page
+    const projectData = allProjects?.filter(p => p.display_pages && p.display_pages.includes('proj-done')) || [];
+    if (!projectData.length) {
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon">🏗️</div>
@@ -2940,11 +3030,23 @@ async function renderProjectsPage() {
 // DYNAMIC OTHER PROJECT SUB-PAGES
 // ============================================
 async function renderOtherProjectPages() {
-  const projectData = await fetchProjects();
-  if (!projectData?.length) return;
+  const allProjects = await fetchProjects();
+  if (!allProjects?.length) return;
+
+  // Helper to filter by page tag
+  const filterByPage = (page) => allProjects.filter(p => p.display_pages && p.display_pages.includes(page));
 
   // Helper to build a small project grid — uses overlay-style hover (matches grid-item)
   function buildProjectGrid(items) {
+    if (!items.length) {
+      return `
+        <div class="empty-state">
+          <div class="empty-state__icon">📋</div>
+          <h3 class="empty-state__title">Chưa có dự án</h3>
+          <p class="empty-state__desc">Thông tin sẽ sớm được cập nhật.</p>
+        </div>
+      `;
+    }
     return `
       <div class="projects-grid">
         ${items.map(p => `
@@ -2965,11 +3067,41 @@ async function renderOtherProjectPages() {
     `;
   }
 
-  // "Dự Án Đang Triển Khai" — show recent projects as ongoing
+  // Helper to build grouped grid with section headers
+  function buildGroupedGrid(items, groupKey, emptyLabel) {
+    if (!items.length) {
+      return `
+        <div class="empty-state">
+          <div class="empty-state__icon">📋</div>
+          <h3 class="empty-state__title">Chưa có dự án</h3>
+          <p class="empty-state__desc">Thông tin sẽ sớm được cập nhật.</p>
+        </div>
+      `;
+    }
+    // Group items
+    const groups = {};
+    items.forEach(p => {
+      const key = p[groupKey] || emptyLabel;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+
+    return Object.entries(groups).map(([label, groupItems]) => `
+      <div class="project-group" style="margin-bottom: 2rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 600; color: #e0e0e0; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          ${groupKey === 'country' ? '🌍 ' : '🏗️ '}${label}
+          <span style="font-size: 0.8rem; font-weight: 400; color: #888; margin-left: 0.5rem;">(${groupItems.length})</span>
+        </h3>
+        ${buildProjectGrid(groupItems)}
+      </div>
+    `).join('');
+  }
+
+  // "Dự Án Đang Triển Khai" — filter by display_pages
   const ongoingContainer = document.querySelector('#page-proj-ongoing .subpage-content');
   if (ongoingContainer) {
-    const recent = projectData.slice(0, 4);
-    ongoingContainer.innerHTML = recent.length ? buildProjectGrid(recent) : `
+    const ongoingProjects = filterByPage('proj-ongoing');
+    ongoingContainer.innerHTML = ongoingProjects.length ? buildProjectGrid(ongoingProjects) : `
       <div class="empty-state">
         <div class="empty-state__icon">🔨</div>
         <h3 class="empty-state__title">Chưa có dự án đang triển khai</h3>
@@ -2978,23 +3110,38 @@ async function renderOtherProjectPages() {
     `;
   }
 
-  // "Theo Quốc Gia" — show all projects grouped
-  const countryContainer = document.querySelector('#page-proj-country .subpage-content');
-  if (countryContainer) {
-    countryContainer.innerHTML = buildProjectGrid(projectData.slice(0, 6));
+  // "Dự Án Tiêu Biểu" (exhibitions) — filter by display_pages
+  const exhibitionsContainer = document.querySelector('#page-exhibitions #exhibitionsGrid') || document.querySelector('#page-exhibitions .subpage-content');
+  if (exhibitionsContainer) {
+    const featuredProjects = filterByPage('exhibitions');
+    exhibitionsContainer.innerHTML = featuredProjects.length ? buildProjectGrid(featuredProjects) : `
+      <div class="empty-state">
+        <div class="empty-state__icon">⭐</div>
+        <h3 class="empty-state__title">Chưa có dự án tiêu biểu</h3>
+        <p class="empty-state__desc">Thông tin sẽ sớm được cập nhật.</p>
+      </div>
+    `;
   }
 
-  // "Theo Lĩnh Vực" — show all projects with category badges
+  // "Theo Quốc Gia" — filter by display_pages, group by country
+  const countryContainer = document.querySelector('#page-proj-country .subpage-content');
+  if (countryContainer) {
+    const countryProjects = filterByPage('proj-country');
+    countryContainer.innerHTML = buildGroupedGrid(countryProjects, 'country', 'Khác');
+  }
+
+  // "Theo Lĩnh Vực" — filter by display_pages, group by category
   const fieldContainer = document.querySelector('#page-proj-field .subpage-content');
   if (fieldContainer) {
-    fieldContainer.innerHTML = buildProjectGrid(projectData);
+    const fieldProjects = filterByPage('proj-field');
+    fieldContainer.innerHTML = buildGroupedGrid(fieldProjects, 'category', 'Khác');
   }
 
   // Attach click handlers for navigation
-  document.querySelectorAll('#page-proj-ongoing .project-card, #page-proj-country .project-card, #page-proj-field .project-card').forEach(card => {
+  document.querySelectorAll('#page-proj-ongoing .project-card, #page-proj-country .project-card, #page-proj-field .project-card, #page-exhibitions .project-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.dataset.productId;
-      const product = projectData.find(p => p.id === id || p.id?.toString() === id);
+      const product = allProjects.find(p => p.id === id || p.id?.toString() === id);
       if (product) navigateTo('product', product);
     });
   });
@@ -3735,7 +3882,14 @@ const PAGE_SLUG_MAP = {
   // Năng lực
   'nang-luc-san-xuat': 'page-cap-prod',
   'nang-luc-thi-cong': 'page-cap-construct',
+  'nang-luc-nha-may': 'page-cap-factory',
   'an-toan-lao-dong': 'page-cap-safety',
+  // Dịch vụ
+  'tong-thau-xay-dung': 'page-svc-general',
+  'tu-van-fdi': 'page-svc-fdi',
+  'san-xuat-ket-cau-thep': 'page-svc-steel',
+  'tu-van-thiet-ke': 'page-svc-design',
+  'kinh-doanh-thuong-mai': 'page-svc-trade',
   // Trang chính
   'lich-su': 'page-history',
   'tin-tuc': 'page-news',
@@ -3755,6 +3909,11 @@ async function tryRenderDynamicPage(pageSlug) {
 
   const pageEl = document.getElementById(pageId);
   if (!pageEl) return false;
+
+  // If page has rich static content (DPR-styled with hero), don't overwrite
+  if (pageEl.classList.contains('page--has-hero')) {
+    return false;
+  }
 
   // Clear existing static content and render dynamic sections
   const dynamicContainer = document.createElement('div');
@@ -4237,6 +4396,534 @@ async function init() {
 
   // Enhanced lazy-loading after initial render
   setTimeout(() => setupLazyImages(), 500);
+}
+
+/* ============================================
+   HORIZONTAL SCROLL FLOW ENGINE
+   Converts Giới thiệu subpages into a seamless
+   horizontal scroll experience with continuous page flow
+   ============================================ */
+
+const HFLOW_GROUPS = {
+  'gioi-thieu': {
+    label: 'Giới thiệu',
+    pages: [
+      { slug: 'thu-ngo',          pageId: 'page-about-letter', title: 'Thư Ngỏ' },
+      { slug: 'tam-nhin-su-menh', pageId: 'page-about-vision', title: 'Tầm Nhìn & Sứ Mệnh' },
+      { slug: 'gia-tri-cot-loi',  pageId: 'page-about-values', title: 'Giá Trị Cốt Lõi' },
+      { slug: 'lich-su',          pageId: 'page-history',       title: 'Lịch Sử' },
+      { slug: 'so-do-to-chuc',    pageId: 'page-about-org',    title: 'Sơ Đồ Tổ Chức' },
+      { slug: 'chung-chi',        pageId: 'page-about-cert',   title: 'Chứng Chỉ & Năng Lực' },
+      { slug: 'giai-thuong',      pageId: 'page-about-awards', title: 'Giải Thưởng' },
+    ],
+  },
+  'nang-luc': {
+    label: 'Năng lực',
+    pages: [
+      { slug: 'nang-luc-san-xuat', pageId: 'page-cap-prod',      title: 'Năng Lực Sản Xuất' },
+      { slug: 'nang-luc-thi-cong', pageId: 'page-cap-construct', title: 'Năng Lực Thi Công' },
+      { slug: 'nang-luc-nha-may',  pageId: 'page-cap-factory',  title: 'Nhà Máy & Thiết Bị' },
+      { slug: 'an-toan-lao-dong',  pageId: 'page-cap-safety',   title: 'An Toàn Lao Động' },
+    ],
+  },
+  'dich-vu': {
+    label: 'Dịch vụ',
+    pages: [
+      { slug: 'tong-thau-xay-dung',    pageId: 'page-svc-general', title: 'Tổng Thầu Xây Dựng' },
+      { slug: 'tu-van-fdi',             pageId: 'page-svc-fdi',     title: 'Tư Vấn FDI' },
+      { slug: 'san-xuat-ket-cau-thep',  pageId: 'page-svc-steel',  title: 'Sản Xuất Kết Cấu Thép' },
+      { slug: 'tu-van-thiet-ke',        pageId: 'page-svc-design', title: 'Tư Vấn Thiết Kế' },
+      { slug: 'kinh-doanh-thuong-mai',  pageId: 'page-svc-trade',  title: 'Kinh Doanh Thương Mại' },
+    ],
+  },
+};
+
+// Build a flat lookup: slug → group key
+const HFLOW_SLUG_TO_GROUP = {};
+Object.entries(HFLOW_GROUPS).forEach(([groupKey, group]) => {
+  group.pages.forEach(p => { HFLOW_SLUG_TO_GROUP[p.slug] = groupKey; });
+});
+
+// Backward compat — get all pages for the active group
+let HFLOW_PAGES = HFLOW_GROUPS['gioi-thieu'].pages;
+let HFLOW_LABEL = HFLOW_GROUPS['gioi-thieu'].label;
+
+const hflow = {
+  container: null,
+  track: null,
+  panels: [],        // { el, pageSlug, pageTitle }
+  currentIdx: 0,
+  totalPanels: 0,
+  isActive: false,
+  isAnimating: false,
+  lastWheelTime: 0,
+  wheelCooldown: 800,
+  touchStartX: 0,
+  touchStartY: 0,
+  activeGroup: null,
+  // Map: panel index → page info
+  panelPageMap: [],
+};
+
+/**
+ * Check if a slug belongs to any horizontal flow group
+ */
+function isHflowPage(slug) {
+  return slug in HFLOW_SLUG_TO_GROUP;
+}
+
+/**
+ * Build the horizontal flow container
+ */
+function buildHflow(startSlug) {
+  // Resolve which group this slug belongs to
+  const groupKey = HFLOW_SLUG_TO_GROUP[startSlug];
+  if (!groupKey) return;
+  const group = HFLOW_GROUPS[groupKey];
+  HFLOW_PAGES = group.pages;
+  HFLOW_LABEL = group.label;
+
+  // Don't rebuild if already active AND in the same group
+  if (hflow.isActive && hflow.activeGroup === groupKey) {
+    // Just scroll to the right page
+    const targetIdx = hflow.panelPageMap.findIndex(p => p.slug === startSlug);
+    if (targetIdx >= 0) {
+      hflowGoTo(targetIdx, false);
+    }
+    return;
+  }
+
+  // If active but different group, destroy first
+  if (hflow.isActive && hflow.activeGroup !== groupKey) {
+    hflow.isActive = false;
+    if (hflow.container) {
+      hflow.container.remove();
+      hflow.container = null;
+      hflow.track = null;
+    }
+    document.removeEventListener('keydown', hflowOnKeydown);
+    document.body.style.overflow = '';
+  }
+
+  hflow.activeGroup = groupKey;
+
+  // Create container
+  const container = document.createElement('div');
+  container.className = 'hflow';
+  container.id = 'hflowContainer';
+
+  const track = document.createElement('div');
+  track.className = 'hflow__track';
+
+  hflow.panels = [];
+  hflow.panelPageMap = [];
+  let panelIdx = 0;
+
+  HFLOW_PAGES.forEach((pageInfo, pageIndex) => {
+    const sourceEl = document.getElementById(pageInfo.pageId);
+    if (!sourceEl) return;
+
+
+    // Extract each direct child of the source page as a panel
+    const children = Array.from(sourceEl.children);
+    children.forEach((child) => {
+      const panel = document.createElement('div');
+      panel.className = 'hflow__panel';
+      panel.dataset.pageSlug = pageInfo.slug;
+      panel.dataset.pageTitle = pageInfo.title;
+
+      // Clone the child content into the panel
+      const clone = child.cloneNode(true);
+      // Remove reveal classes so they animate fresh
+      clone.classList.remove('reveal--visible');
+      clone.querySelectorAll('.reveal--visible').forEach(el => el.classList.remove('reveal--visible'));
+      panel.appendChild(clone);
+
+      track.appendChild(panel);
+      hflow.panelPageMap.push({ slug: pageInfo.slug, title: pageInfo.title, isDivider: false });
+      panelIdx++;
+    });
+  });
+
+  container.appendChild(track);
+
+  // Add progress dots
+  const progress = document.createElement('div');
+  progress.className = 'hflow__progress';
+  let lastSlug = '';
+  hflow.panelPageMap.forEach((info, idx) => {
+    const dot = document.createElement('div');
+    dot.className = 'hflow__dot';
+    if (idx === 0) dot.classList.add('hflow__dot--active');
+    if (info.slug !== lastSlug && lastSlug !== '') {
+      dot.classList.add('hflow__dot--page-start');
+    }
+    dot.dataset.idx = idx;
+    dot.addEventListener('click', () => hflowGoTo(idx));
+    progress.appendChild(dot);
+    lastSlug = info.slug;
+  });
+  container.appendChild(progress);
+
+  // Add page name overlay
+  const pagename = document.createElement('div');
+  pagename.className = 'hflow__pagename hflow__pagename--light';
+  pagename.innerHTML = `
+    <div class="hflow__pagename-label">${HFLOW_LABEL}</div>
+    <div class="hflow__pagename-title">${HFLOW_PAGES[0].title}</div>
+  `;
+  container.appendChild(pagename);
+
+  // Add counter
+  const counter = document.createElement('div');
+  counter.className = 'hflow__counter';
+  counter.textContent = `01 / ${String(hflow.panelPageMap.length).padStart(2, '0')}`;
+  container.appendChild(counter);
+
+  // Add scroll hint
+  const hint = document.createElement('div');
+  hint.className = 'hflow__scroll-hint';
+  hint.innerHTML = `
+    <span class="hflow__scroll-hint-text">Scroll</span>
+    <div class="hflow__scroll-hint-line"></div>
+  `;
+  container.appendChild(hint);
+
+  // Add close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'hflow__close';
+  closeBtn.innerHTML = '✕';
+  closeBtn.addEventListener('click', destroyHflow);
+  container.appendChild(closeBtn);
+
+  // Insert into DOM
+  document.body.appendChild(container);
+
+  hflow.container = container;
+  hflow.track = track;
+  hflow.totalPanels = hflow.panelPageMap.length;
+  hflow.isActive = true;
+
+  // Find start panel
+  const startIdx = hflow.panelPageMap.findIndex(p => p.slug === startSlug && !p.isDivider);
+  hflow.currentIdx = startIdx >= 0 ? startIdx : 0;
+
+  // Position track
+  hflowGoTo(hflow.currentIdx, false);
+
+  // Activate with a slight delay for fade-in
+  requestAnimationFrame(() => {
+    container.classList.add('active');
+    // Make current and adjacent panels visible
+    hflowUpdateVisibility();
+  });
+
+  // Bind events
+  container.addEventListener('wheel', hflowOnWheel, { passive: false });
+  container.addEventListener('touchstart', hflowOnTouchStart, { passive: true });
+  container.addEventListener('touchend', hflowOnTouchEnd, { passive: true });
+  document.addEventListener('keydown', hflowOnKeydown);
+
+  // Hide normal page elements
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Destroy horizontal flow and return to normal navigation
+ */
+function destroyHflow() {
+  if (!hflow.isActive) return;
+
+  hflow.isActive = false;
+
+  if (hflow.container) {
+    hflow.container.classList.remove('active');
+    const containerRef = hflow.container;
+    hflow.container = null;
+    hflow.track = null;
+    setTimeout(() => {
+      containerRef.remove();
+    }, 500);
+  }
+
+  document.removeEventListener('keydown', hflowOnKeydown);
+  document.body.style.overflow = '';
+
+  // Navigate back to homepage (hflow.isActive is already false so navigateTo won't re-cleanup)
+  navigateTo('home');
+}
+
+/**
+ * Go to a specific panel index
+ */
+function hflowGoTo(idx, animate = true) {
+  if (idx < 0 || idx >= hflow.totalPanels) return;
+
+  hflow.currentIdx = idx;
+  const offset = -idx * 100;
+
+  if (hflow.track) {
+    if (!animate) {
+      hflow.track.style.transition = 'none';
+      hflow.track.style.transform = `translateX(${offset}vw)`;
+      // Force reflow then restore transition
+      hflow.track.offsetHeight;
+      hflow.track.style.transition = '';
+    } else {
+      hflow.track.style.transform = `translateX(${offset}vw)`;
+    }
+  }
+
+  hflowUpdateUI();
+  hflowUpdateVisibility();
+
+  // Update URL and page title based on current page
+  const info = hflow.panelPageMap[idx];
+  if (info && !info.isDivider) {
+    const pageConfig = HFLOW_PAGES.find(p => p.slug === info.slug);
+    if (pageConfig) {
+      const fullTitle = `${info.title} — Tiến Thịnh JSC`;
+      document.title = fullTitle;
+      const urlPath = `/${info.slug}`;
+      if (window.location.pathname !== urlPath) {
+        history.replaceState({ page: info.slug, hflow: true }, fullTitle, urlPath);
+      }
+    }
+  }
+
+  // Trigger reveal animations for the current panel
+  setTimeout(() => {
+    const panels = hflow.track?.querySelectorAll('.hflow__panel');
+    if (panels && panels[idx]) {
+      const panelEl = panels[idx];
+      panelEl.querySelectorAll('.reveal, .reveal--left, .reveal--right, .reveal--scale, .reveal-stagger').forEach(el => {
+        el.classList.add('reveal--visible');
+      });
+    }
+  }, 300);
+}
+
+/**
+ * Update UI elements (dots, counter, page name)
+ */
+function hflowUpdateUI() {
+  const info = hflow.panelPageMap[hflow.currentIdx];
+  if (!info) return;
+
+  // Update dots
+  const dots = hflow.container?.querySelectorAll('.hflow__dot');
+  dots?.forEach((dot, i) => {
+    dot.classList.toggle('hflow__dot--active', i === hflow.currentIdx);
+  });
+
+  // Update counter
+  const counter = hflow.container?.querySelector('.hflow__counter');
+  if (counter) {
+    counter.textContent = `${String(hflow.currentIdx + 1).padStart(2, '0')} / ${String(hflow.totalPanels).padStart(2, '0')}`;
+  }
+
+  // Update page name
+  const pagename = hflow.container?.querySelector('.hflow__pagename-title');
+  if (pagename) {
+    pagename.textContent = info.title;
+  }
+
+  // Light/dark mode for pagename based on panel type
+  const nameEl = hflow.container?.querySelector('.hflow__pagename');
+  if (nameEl) {
+    const panels = hflow.track?.querySelectorAll('.hflow__panel');
+    const currentPanel = panels?.[hflow.currentIdx];
+    const isHero = currentPanel?.querySelector('.page-hero');
+    const isStats = currentPanel?.querySelector('.dpr-stats');
+    nameEl.classList.toggle('hflow__pagename--light', !!(isHero || isStats));
+  }
+
+  // Mark as scrolled (hide hint)
+  if (hflow.currentIdx > 0) {
+    hflow.container?.classList.add('hflow--scrolled');
+  }
+}
+
+/**
+ * Update panel visibility (show current ± 1)
+ */
+function hflowUpdateVisibility() {
+  const panels = hflow.track?.querySelectorAll('.hflow__panel');
+  if (!panels) return;
+
+  panels.forEach((panel, i) => {
+    const isCurrent = i === hflow.currentIdx;
+    const isNear = Math.abs(i - hflow.currentIdx) <= 1;
+    const wasActive = panel.classList.contains('hflow__panel--active');
+
+    // ±1 panels stay visible for smooth exit transitions
+    panel.classList.toggle('hflow__panel--visible', isNear);
+    // Only the exact current panel gets --active for entrance animations
+    panel.classList.toggle('hflow__panel--active', isCurrent);
+
+    // When a panel becomes the active one, trigger counter animations for stats
+    if (isCurrent && !wasActive) {
+      hflowAnimateCounters(panel);
+    }
+  });
+}
+
+/**
+ * Animate stat counters (count from 0 to target number)
+ */
+function hflowAnimateCounters(panel) {
+  const numbers = panel.querySelectorAll('.dpr-stats__number');
+  if (!numbers.length) return;
+
+  numbers.forEach((numEl, i) => {
+    const text = numEl.textContent.trim();
+    // Extract numeric part: e.g. "20.000+" → 20000, "500+" → 500
+    const match = text.match(/([\d.,]+)/);
+    if (!match) return;
+
+    const rawStr = match[1];
+    const target = parseFloat(rawStr.replace(/\./g, '').replace(',', '.'));
+    if (isNaN(target)) return;
+
+    // Determine format: uses dots as thousand separator?
+    const usesDots = rawStr.includes('.');
+    const suffix = text.replace(rawStr, ''); // e.g. "+" at the end
+
+    const duration = 1800; // ms
+    const startDelay = 500 + i * 200; // stagger per item
+    const startTime = performance.now() + startDelay;
+
+    numEl.textContent = '0' + suffix;
+
+    function tick(now) {
+      const elapsed = now - startTime;
+      if (elapsed < 0) {
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+
+      // Format with dots if original used them (e.g. 20.000)
+      let formatted;
+      if (usesDots) {
+        formatted = current.toLocaleString('de-DE'); // uses dot for thousands
+      } else {
+        formatted = current.toString();
+      }
+
+      numEl.textContent = formatted + suffix;
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      }
+    }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+/**
+ * Wheel event handler — translate vertical scroll to horizontal panel change
+ */
+function hflowOnWheel(e) {
+  e.preventDefault();
+
+  const now = Date.now();
+  if (now - hflow.lastWheelTime < hflow.wheelCooldown) return;
+  if (hflow.isAnimating) return;
+
+  // Check if we're scrolling inside a panel that has overflow
+  const currentPanels = hflow.track?.querySelectorAll('.hflow__panel');
+  const currentPanel = currentPanels?.[hflow.currentIdx];
+  if (currentPanel && currentPanel.classList.contains('hflow__panel')) {
+    // Check if panel has scrollable content
+    const scrollable = currentPanel.scrollHeight > currentPanel.clientHeight;
+    if (scrollable) {
+      const atTop = currentPanel.scrollTop <= 5;
+      const atBottom = currentPanel.scrollTop + currentPanel.clientHeight >= currentPanel.scrollHeight - 5;
+
+      // If scrolling down and not at bottom, allow vertical scroll within panel
+      if (e.deltaY > 0 && !atBottom) return;
+      // If scrolling up and not at top, allow vertical scroll within panel
+      if (e.deltaY < 0 && !atTop) return;
+    }
+  }
+
+  const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+  // Need significant scroll intent
+  if (Math.abs(delta) < 30) return;
+
+  hflow.lastWheelTime = now;
+  hflow.isAnimating = true;
+
+  if (delta > 0) {
+    // Scroll right → next panel
+    if (hflow.currentIdx < hflow.totalPanels - 1) {
+      hflowGoTo(hflow.currentIdx + 1);
+    }
+  } else {
+    // Scroll left → previous panel
+    if (hflow.currentIdx > 0) {
+      hflowGoTo(hflow.currentIdx - 1);
+    }
+  }
+
+  setTimeout(() => {
+    hflow.isAnimating = false;
+  }, hflow.wheelCooldown);
+}
+
+/**
+ * Touch handlers for mobile swipe
+ */
+function hflowOnTouchStart(e) {
+  hflow.touchStartX = e.touches[0].clientX;
+  hflow.touchStartY = e.touches[0].clientY;
+}
+
+function hflowOnTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - hflow.touchStartX;
+  const dy = e.changedTouches[0].clientY - hflow.touchStartY;
+
+  // Horizontal swipe needs to be dominant
+  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+
+  if (dx < 0 && hflow.currentIdx < hflow.totalPanels - 1) {
+    hflowGoTo(hflow.currentIdx + 1);
+  } else if (dx > 0 && hflow.currentIdx > 0) {
+    hflowGoTo(hflow.currentIdx - 1);
+  }
+}
+
+/**
+ * Keyboard navigation
+ */
+function hflowOnKeydown(e) {
+  if (!hflow.isActive) return;
+
+  switch (e.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      if (hflow.currentIdx < hflow.totalPanels - 1) {
+        hflowGoTo(hflow.currentIdx + 1);
+      }
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      if (hflow.currentIdx > 0) {
+        hflowGoTo(hflow.currentIdx - 1);
+      }
+      break;
+    case 'Escape':
+      destroyHflow();
+      break;
+  }
 }
 
 // Start the app

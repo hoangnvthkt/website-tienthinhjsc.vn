@@ -46,6 +46,8 @@ export async function fetchProjects() {
         description: p.description || '',
         specs: p.specs || '',
         variants: [],
+        display_pages: p.display_pages || ['proj-done'],
+        country: p.country || null,
         size: fallback?.size || { w: 200, h: 150 },
         spacePos: fallback?.spacePos || { x: 30 + Math.random() * 40, y: 20 + Math.random() * 60 },
         _raw: p,

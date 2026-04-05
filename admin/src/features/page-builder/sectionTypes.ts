@@ -251,6 +251,221 @@ export const SECTION_TYPES: SectionTypeConfig[] = [
       ], group: 'style' },
     ]
   },
+  // ===== NEW PREMIUM SECTION TYPES (12) =====
+
+  // --- GROUP 1: CONVERSION ---
+  {
+    type: 'pricing',
+    label: 'Bảng giá dịch vụ',
+    icon: '💰',
+    description: 'Grid 2–4 gói dịch vụ với highlight gói nổi bật, toggle tháng/năm',
+    defaultConfig: { columns: 3, highlight_index: 1, currency: 'VNĐ', style: 'card' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Bảng giá dịch vụ', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách gói', type: 'items-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 gói' }, { value: '3', label: '3 gói' }, { value: '4', label: '4 gói' }
+      ], group: 'style' },
+      { key: 'highlight_index', label: 'Gói nổi bật (0,1,2...)', type: 'number', group: 'style' },
+      { key: 'currency', label: 'Đơn vị tiền', type: 'text', placeholder: 'VNĐ', group: 'style' },
+    ]
+  },
+  {
+    type: 'process_steps',
+    label: 'Bước quy trình',
+    icon: '🔢',
+    description: 'Timeline ngang 3–6 bước với số thứ tự, icon và mô tả',
+    defaultConfig: { style: 'horizontal', connector: 'line' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Quy trình làm việc', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả section', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách bước', type: 'icon-text-list', group: 'content' },
+      { key: 'style', label: 'Kiểu hiển thị', type: 'select', options: [
+        { value: 'horizontal', label: 'Ngang' }, { value: 'vertical', label: 'Dọc' }, { value: 'zigzag', label: 'Zigzag' }
+      ], group: 'style' },
+      { key: 'connector', label: 'Kiểu nối', type: 'select', options: [
+        { value: 'line', label: 'Đường thẳng' }, { value: 'dashed', label: 'Nét đứt' }, { value: 'arrow', label: 'Mũi tên' }
+      ], group: 'style' },
+    ]
+  },
+  {
+    type: 'download_box',
+    label: 'Tải tài liệu',
+    icon: '📥',
+    description: 'Thẻ download tài liệu với icon file, badge loại file',
+    defaultConfig: { columns: 2, style: 'card' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Tài liệu tham khảo', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách tài liệu', type: 'icon-text-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '1', label: '1 cột' }, { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }
+      ], group: 'style' },
+    ]
+  },
+
+  // --- GROUP 2: VISUAL & INTERACTIVE ---
+  {
+    type: 'before_after',
+    label: 'So sánh Trước/Sau',
+    icon: '🔄',
+    description: 'Slider kéo so sánh 2 ảnh trước và sau — rất hiệu quả cho dự án xây dựng',
+    defaultConfig: { orientation: 'horizontal', initial_position: 50 },
+    fields: [
+      { key: 'title', label: 'Tiêu đề (tuỳ chọn)', type: 'text', placeholder: 'Trước & Sau thi công', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'before_image', label: 'Ảnh TRƯỚC', type: 'image', group: 'content' },
+      { key: 'after_image', label: 'Ảnh SAU', type: 'image', group: 'content' },
+      { key: 'before_label', label: 'Nhãn Trước', type: 'text', placeholder: 'Trước', group: 'content' },
+      { key: 'after_label', label: 'Nhãn Sau', type: 'text', placeholder: 'Sau', group: 'content' },
+      { key: 'orientation', label: 'Hướng kéo', type: 'select', options: [
+        { value: 'horizontal', label: 'Ngang' }, { value: 'vertical', label: 'Dọc' }
+      ], group: 'style' },
+      { key: 'initial_position', label: 'Vị trí ban đầu (%)', type: 'number', group: 'style' },
+    ]
+  },
+  {
+    type: 'animated_counter',
+    label: 'Đếm số động',
+    icon: '🔥',
+    description: 'Số nhảy count-up khi scroll vào view, với suffix/prefix tuỳ chỉnh',
+    defaultConfig: { columns: 4, duration: 2000, background: 'dark' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề (tuỳ chọn)', type: 'text', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách số liệu', type: 'icon-text-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }
+      ], group: 'style' },
+      { key: 'background', label: 'Màu nền', type: 'select', options: [
+        { value: 'dark', label: 'Tối' }, { value: 'primary', label: 'Xanh (Primary)' }, { value: 'gradient', label: 'Gradient' }, { value: 'light', label: 'Sáng' }
+      ], group: 'style' },
+      { key: 'duration', label: 'Thời gian đếm (ms)', type: 'number', group: 'advanced' },
+    ]
+  },
+  {
+    type: 'masonry_gallery',
+    label: 'Gallery kiểu Pinterest',
+    icon: '🧱',
+    description: 'Lưới ảnh không đều (masonry) với hover zoom + lightbox xem full',
+    defaultConfig: { columns: 3, gap: 12, show_overlay: true },
+    fields: [
+      { key: 'title', label: 'Tiêu đề (tuỳ chọn)', type: 'text', group: 'content' },
+      { key: 'media_urls', label: 'Danh sách ảnh', type: 'images', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }
+      ], group: 'style' },
+      { key: 'show_overlay', label: 'Hiện overlay khi hover', type: 'toggle', group: 'style' },
+    ]
+  },
+  {
+    type: 'map_section',
+    label: 'Bản đồ',
+    icon: '🗺️',
+    description: 'Google Maps nhúng với danh sách địa điểm bên cạnh',
+    defaultConfig: { map_height: 400, layout: 'map-right' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề', type: 'text', placeholder: 'Mạng lưới dự án', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'map_embed', label: 'Google Maps Embed URL', type: 'url', placeholder: 'https://www.google.com/maps/embed?pb=...', group: 'content' },
+      { key: 'items', label: 'Danh sách địa điểm', type: 'icon-text-list', group: 'content' },
+      { key: 'map_height', label: 'Chiều cao bản đồ (px)', type: 'number', group: 'style' },
+      { key: 'layout', label: 'Bố cục', type: 'select', options: [
+        { value: 'map-right', label: 'Bản đồ bên phải' }, { value: 'map-left', label: 'Bản đồ bên trái' }, { value: 'map-full', label: 'Bản đồ full width' }
+      ], group: 'style' },
+    ]
+  },
+
+  // --- GROUP 3: ADVANCED CONTENT ---
+  {
+    type: 'tabs',
+    label: 'Nội dung dạng Tab',
+    icon: '📑',
+    description: '2–5 tab ngang, click chuyển nội dung với animation mượt',
+    defaultConfig: { style: 'underline', alignment: 'center' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section (tuỳ chọn)', type: 'text', group: 'content' },
+      { key: 'items', label: 'Danh sách tab', type: 'icon-text-list', group: 'content' },
+      { key: 'style', label: 'Kiểu tab', type: 'select', options: [
+        { value: 'underline', label: 'Gạch dưới' }, { value: 'pill', label: 'Viên thuốc' }, { value: 'boxed', label: 'Hộp' }
+      ], group: 'style' },
+      { key: 'alignment', label: 'Căn chỉnh tab', type: 'select', options: [
+        { value: 'left', label: 'Trái' }, { value: 'center', label: 'Giữa' }, { value: 'stretch', label: 'Dàn đều' }
+      ], group: 'style' },
+    ]
+  },
+  {
+    type: 'latest_posts',
+    label: 'Bài viết mới nhất',
+    icon: '📰',
+    description: 'Grid bài viết mới nhất — auto-fetch từ database',
+    defaultConfig: { count: 4, columns: 2, show_date: true, show_excerpt: true },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Tin tức mới nhất', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'count', label: 'Số bài hiển thị', type: 'number', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }
+      ], group: 'style' },
+      { key: 'show_date', label: 'Hiện ngày đăng', type: 'toggle', group: 'style' },
+      { key: 'show_excerpt', label: 'Hiện tóm tắt', type: 'toggle', group: 'style' },
+    ]
+  },
+  {
+    type: 'rich_accordion',
+    label: 'Accordion nâng cao',
+    icon: '📜',
+    description: 'Accordion hỗ trợ ảnh, icon, rich text bên trong mỗi mục',
+    defaultConfig: { style: 'bordered', allow_multiple: false, icon_position: 'left' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách mục', type: 'icon-text-list', group: 'content' },
+      { key: 'style', label: 'Kiểu viền', type: 'select', options: [
+        { value: 'bordered', label: 'Có viền' }, { value: 'separated', label: 'Tách biệt' }, { value: 'minimal', label: 'Tối giản' }
+      ], group: 'style' },
+      { key: 'allow_multiple', label: 'Cho phép mở nhiều mục', type: 'toggle', group: 'style' },
+      { key: 'icon_position', label: 'Vị trí icon', type: 'select', options: [
+        { value: 'left', label: 'Bên trái' }, { value: 'right', label: 'Bên phải' }
+      ], group: 'style' },
+    ]
+  },
+
+  // --- GROUP 4: BRAND TRUST ---
+  {
+    type: 'certifications',
+    label: 'Chứng nhận & Giải thưởng',
+    icon: '🏆',
+    description: 'Grid chứng nhận ISO, giải thưởng với hover flip hiện mô tả',
+    defaultConfig: { columns: 4, style: 'card' },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Chứng nhận & Giải thưởng', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách chứng nhận', type: 'icon-text-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }, { value: '5', label: '5 cột' }
+      ], group: 'style' },
+      { key: 'style', label: 'Kiểu hiển thị', type: 'select', options: [
+        { value: 'card', label: 'Thẻ (Card)' }, { value: 'badge', label: 'Huy hiệu' }, { value: 'minimal', label: 'Tối giản' }
+      ], group: 'style' },
+    ]
+  },
+  {
+    type: 'video_gallery',
+    label: 'Thư viện Video',
+    icon: '🎥',
+    description: 'Grid video thumbnails với play overlay, click mở lightbox player',
+    defaultConfig: { columns: 3, autoplay: false },
+    fields: [
+      { key: 'title', label: 'Tiêu đề section', type: 'text', placeholder: 'Video công trình', group: 'content' },
+      { key: 'subtitle', label: 'Mô tả', type: 'textarea', group: 'content' },
+      { key: 'items', label: 'Danh sách video (YouTube URL)', type: 'icon-text-list', group: 'content' },
+      { key: 'columns', label: 'Số cột', type: 'select', options: [
+        { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }
+      ], group: 'style' },
+    ]
+  },
 ]
 
 export function getSectionType(type: string): SectionTypeConfig | undefined {

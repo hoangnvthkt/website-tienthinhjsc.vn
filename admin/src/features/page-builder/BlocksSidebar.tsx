@@ -9,10 +9,12 @@ interface BlocksSidebarProps {
 }
 
 const BLOCK_CATEGORIES = [
-  { key: 'content', label: 'Nội dung', types: ['text', 'hero', 'video', 'image_gallery'] },
-  { key: 'layout', label: 'Bố cục', types: ['features', 'stats', 'cta', 'divider'] },
-  { key: 'interactive', label: 'Tương tác', types: ['faq', 'testimonial', 'contact_form'] },
-  { key: 'data', label: 'Dữ liệu', types: ['featured_projects', 'partners', 'timeline', 'team'] },
+  { key: 'content', label: 'Nội dung', types: ['text', 'hero', 'video', 'image_gallery', 'tabs', 'rich_accordion'] },
+  { key: 'layout', label: 'Bố cục', types: ['features', 'stats', 'cta', 'divider', 'process_steps', 'animated_counter'] },
+  { key: 'interactive', label: 'Tương tác', types: ['faq', 'testimonial', 'contact_form', 'before_after'] },
+  { key: 'data', label: 'Dữ liệu', types: ['featured_projects', 'latest_posts', 'partners', 'timeline', 'team'] },
+  { key: 'media', label: 'Media', types: ['masonry_gallery', 'video_gallery', 'map_section'] },
+  { key: 'business', label: 'Doanh nghiệp', types: ['pricing', 'download_box', 'certifications'] },
 ]
 
 export default function BlocksSidebar({ collapsed, onToggle, onAddSection }: BlocksSidebarProps) {

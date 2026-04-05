@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { generateSlug } from '@/lib/utils'
@@ -8,6 +8,19 @@ import { logActivity } from '@/lib/activityLog'
 import ImageUploader from '@/components/shared/ImageUploader'
 import SeoFields from '@/components/shared/SeoFields'
 import type { ProjectCategory } from '@/types/database'
+
+// Display page options matching the website navigation
+const DISPLAY_PAGE_OPTIONS = [
+  { value: 'proj-done', label: 'Dự án đã triển khai', color: 'bg-green-100 text-green-700 border-green-200' },
+  { value: 'proj-ongoing', label: 'Dự án đang triển khai', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { value: 'exhibitions', label: 'Dự án tiêu biểu', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  { value: 'proj-country', label: 'Theo quốc gia', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  { value: 'proj-field', label: 'Theo lĩnh vực', color: 'bg-rose-100 text-rose-700 border-rose-200' },
+]
+
+const COUNTRY_OPTIONS = [
+  'Việt Nam', 'Trung Quốc', 'Đài Loan', 'Hàn Quốc', 'Mỹ', 'Anh', 'Pháp', 'Đức'
+]
 
 interface FormData {
   title: string
@@ -21,6 +34,8 @@ interface FormData {
   featured_image: string | null
   status: 'draft' | 'published'
   sort_order: number
+  display_pages: string[]
+  country: string
   meta_title: string
   meta_description: string
 }
@@ -28,6 +43,7 @@ interface FormData {
 const initial: FormData = {
   title: '', slug: '', subtitle: '', category: '', category_id: '', year: new Date().getFullYear().toString(),
   description: '', specs: '', featured_image: null, status: 'draft', sort_order: 0,
+  display_pages: ['proj-done'], country: '',
   meta_title: '', meta_description: ''
 }
 
@@ -54,6 +70,8 @@ export default function ProjectFormPage() {
           category_id: data.category_id || '', year: data.year || '', description: data.description || '',
           specs: data.specs || '', featured_image: data.featured_image, status: (data.status as FormData['status']) || 'draft',
           sort_order: data.sort_order,
+          display_pages: (data as Record<string, unknown>).display_pages as string[] || ['proj-done'],
+          country: (data as Record<string, unknown>).country as string || '',
           meta_title: data.meta_title || '', meta_description: data.meta_description || ''
         })
         setLoading(false)
@@ -61,7 +79,7 @@ export default function ProjectFormPage() {
     }
   }, [id, isEdit, navigate])
 
-  const handleChange = (field: keyof FormData, value: string | number | null) => {
+  const handleChange = (field: keyof FormData, value: string | number | string[] | null) => {
     setForm(prev => {
       const next = { ...prev, [field]: value }
       if (field === 'title' && !isEdit) next.slug = generateSlug(value as string)
@@ -73,9 +91,23 @@ export default function ProjectFormPage() {
     })
   }
 
+  const toggleDisplayPage = (page: string) => {
+    setForm(prev => {
+      const currentPages = prev.display_pages || []
+      const pages = currentPages.includes(page)
+        ? currentPages.filter(p => p !== page)
+        : [...currentPages, page]
+      // Ensure at least one page is selected
+      if (pages.length === 0) return prev
+      return { ...prev, display_pages: pages }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title.trim()) { setError('Vui lòng nhập tên dự án'); return }
+    if (!form.display_pages?.length) { setError('Vui lòng chọn ít nhất 1 trang hiển thị'); return }
+    if (form.display_pages.includes('proj-country') && !form.country) { setError('Vui lòng chọn quốc gia khi trang "Theo quốc gia" được chọn'); return }
     setError('')
     setSaving(true)
 
@@ -84,6 +116,8 @@ export default function ProjectFormPage() {
       category: form.category || null, category_id: form.category_id || null, year: form.year || null,
       description: form.description || null, specs: form.specs || null, featured_image: form.featured_image,
       status: form.status, sort_order: form.sort_order,
+      display_pages: form.display_pages,
+      country: form.country || null,
       meta_title: form.meta_title || null, meta_description: form.meta_description || null,
       ...(form.status === 'published' ? { published_at: new Date().toISOString() } : {}),
       ...(!isEdit ? { author_id: user?.id } : {}),
@@ -147,6 +181,47 @@ export default function ProjectFormPage() {
                 <input type="text" value={form.specs} onChange={(e) => handleChange('specs', e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="VD: Diện tích: 25.000m² | Khẩu độ: 36m" />
               </div>
+            </div>
+
+            {/* Display Pages Section */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trang hiển thị *</label>
+                <p className="text-xs text-gray-400 mb-3">Chọn các trang mà dự án sẽ xuất hiện trên website. Có thể chọn nhiều trang.</p>
+                <div className="flex flex-wrap gap-2">
+                  {DISPLAY_PAGE_OPTIONS.map(opt => {
+                    const isActive = (form.display_pages || []).includes(opt.value)
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleDisplayPage(opt.value)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                          isActive
+                            ? opt.color + ' ring-2 ring-offset-1 ring-current/20 shadow-sm'
+                            : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600'
+                        }`}
+                      >
+                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                        {opt.label}
+                        {isActive && <X size={12} className="ml-0.5 opacity-60" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Country field - only shown when proj-country is selected */}
+              {(form.display_pages || []).includes('proj-country') && (
+                <div className="pt-2 border-t border-gray-100">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Quốc gia *</label>
+                  <select value={form.country} onChange={(e) => handleChange('country', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                    <option value="">— Chọn quốc gia —</option>
+                    {COUNTRY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

@@ -11,7 +11,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app">
@@ -654,13 +654,28 @@
           <p class="page-hero__subtitle">Thông điệp từ Ban Lãnh đạo Tiến Thịnh JSC</p>
         </div>
       </div>
-      <div class="page-content">
+
+      <!-- Split: CEO Photo + Letter -->
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/construction-team.png" alt="Đội ngũ lãnh đạo Tiến Thịnh JSC" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Từ Tổng Giám đốc</span>
+          <h2 class="dpr-split__title">Xây dựng nền tảng vững chắc cho tương lai</h2>
+          <div class="dpr-split__text">
+            <p>Kính gửi Quý Đối tác, Quý Khách hàng,</p>
+            <p>Trải qua hơn <strong>20 năm</strong> hình thành và phát triển, Công ty Cổ phần Phát triển Đầu tư và Xây lắp Tiến Thịnh đã không ngừng nỗ lực vươn lên, khẳng định vị thế là một trong những đơn vị hàng đầu trong lĩnh vực <strong>sản xuất kết cấu thép và xây lắp công nghiệp</strong> tại Việt Nam.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quote Section -->
+      <div class="dpr-section dpr-section--narrow reveal">
+        <blockquote class="page-content__quote">
+          "Chất lượng là nền tảng — Uy tín là giá trị — Đổi mới là động lực phát triển."
+        </blockquote>
         <div class="page-content__body">
-          <p class="page-content__greeting">Kính gửi Quý Đối tác, Quý Khách hàng,</p>
-          <p>Trải qua hơn <strong>20 năm</strong> hình thành và phát triển, Công ty Cổ phần Phát triển Đầu tư và Xây lắp Tiến Thịnh đã không ngừng nỗ lực vươn lên, khẳng định vị thế là một trong những đơn vị hàng đầu trong lĩnh vực <strong>sản xuất kết cấu thép và xây lắp công nghiệp</strong> tại Việt Nam.</p>
-          <blockquote class="page-content__quote">
-            "Chất lượng là nền tảng — Uy tín là giá trị — Đổi mới là động lực phát triển."
-          </blockquote>
           <p>Với đội ngũ hơn <strong>350 kỹ sư và công nhân lành nghề</strong>, hệ thống nhà xưởng sản xuất <strong>20.000m²</strong> được trang bị dây chuyền CNC hiện đại, chúng tôi tự hào đã hoàn thành hơn <strong>500 dự án</strong> lớn nhỏ trên khắp Việt Nam và khu vực Đông Nam Á.</p>
           <p>Tiến Thịnh JSC luôn lấy chất lượng công trình làm kim chỉ nam, lấy sự hài lòng của khách hàng làm thước đo thành công. Chúng tôi cam kết mang đến những giải pháp kết cấu thép tối ưu nhất — từ tư vấn thiết kế, gia công chế tạo đến lắp đặt hoàn thiện tại công trường.</p>
           <p>Chúng tôi tin tưởng rằng sự hợp tác giữa Tiến Thịnh JSC và Quý Đối tác sẽ ngày càng bền chặt, cùng nhau kiến tạo những công trình bền vững cho tương lai.</p>
@@ -671,17 +686,90 @@
           </div>
         </div>
       </div>
+
+      <!-- Stats -->
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number" data-count-to="20">20+</span>
+          <span class="dpr-stats__label">Năm kinh nghiệm</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number" data-count-to="500">500+</span>
+          <span class="dpr-stats__label">Dự án hoàn thành</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number" data-count-to="350">350+</span>
+          <span class="dpr-stats__label">Nhân sự</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">20.000m²</span>
+          <span class="dpr-stats__label">Nhà xưởng sản xuất</span>
+        </div>
+      </div>
     </main>
 
     <!-- Page: Tầm Nhìn Sứ Mệnh -->
-    <main class="page page--subpage" id="page-about-vision">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Tầm Nhìn & Sứ Mệnh</h1>
-          <p class="content-page__intro">Định hướng phát triển bền vững và sứ mệnh của Tiến Thịnh JSC trong ngành xây dựng.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-vision">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-frame-building.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Tầm Nhìn & Sứ Mệnh</h1>
+          <p class="page-hero__subtitle">Định hướng phát triển bền vững</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/high-rise-steel.png" alt="Tầm nhìn Tiến Thịnh JSC" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Tầm nhìn</span>
+          <h2 class="dpr-split__title">Trở thành nhà thầu kết cấu thép hàng đầu Đông Nam Á</h2>
+          <div class="dpr-split__text">
+            <p>Đến năm 2030, Tiến Thịnh JSC hướng tới vị thế <strong>Top 5 nhà thầu kết cấu thép</strong> tại Việt Nam và mở rộng hoạt động ra khu vực ASEAN.</p>
+            <p>Chúng tôi đặt mục tiêu phát triển bền vững, ứng dụng công nghệ tiên tiến và đào tạo nguồn nhân lực chất lượng cao.</p>
+          </div>
+        </div>
+      </div>
+      <div class="dpr-split dpr-split--reverse reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-bridge.png" alt="Sứ mệnh Tiến Thịnh JSC" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Sứ mệnh</span>
+          <h2 class="dpr-split__title">Kiến tạo công trình bền vững, nâng tầm giá trị cuộc sống</h2>
+          <div class="dpr-split__text">
+            <p>Mang đến giải pháp kết cấu thép <strong>toàn diện, tối ưu chi phí</strong> và đảm bảo chất lượng cao nhất cho mọi loại hình công trình.</p>
+            <p>Đồng hành cùng khách hàng trong toàn bộ quá trình — từ tư vấn thiết kế, sản xuất tại nhà máy đến lắp đặt hoàn thiện.</p>
+          </div>
+        </div>
+      </div>
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Trụ cột phát triển</span>
+          <h2 class="dpr-section__title">Bốn trụ cột chiến lược</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Chất lượng không thỏa hiệp</h3>
+            <p class="dpr-feature__desc">Áp dụng ISO 9001:2015, tiêu chuẩn hàn AWS D1.1 và kiểm tra NDT cho 100% sản phẩm.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Đổi mới công nghệ</h3>
+            <p class="dpr-feature__desc">Tiên phong ứng dụng BIM, CNC tự động hóa và phần mềm quản lý dự án hiện đại.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Phát triển con người</h3>
+            <p class="dpr-feature__desc">Đầu tư đào tạo chuyên sâu, xây dựng đội ngũ kỹ sư và công nhân lành nghề.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Bền vững môi trường</h3>
+            <p class="dpr-feature__desc">Cam kết phát triển hài hòa với môi trường, ứng dụng vật liệu xanh và tiết kiệm năng lượng.</p>
+          </div>
         </div>
       </div>
     </main>
@@ -730,157 +818,805 @@
     </main>
 
     <!-- Page: Sơ Đồ Tổ Chức -->
-    <main class="page page--subpage" id="page-about-org">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Sơ Đồ Tổ Chức</h1>
-          <p class="content-page__intro">Cơ cấu tổ chức và bộ máy điều hành của Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-org">
+      <div class="page-hero" style="--hero-bg: url('/images/construction-team.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Sơ Đồ Tổ Chức</h1>
+          <p class="page-hero__subtitle">Cơ cấu bộ máy điều hành</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Tổ chức</span>
+          <h2 class="dpr-section__title">Bộ máy lãnh đạo & các phòng ban</h2>
+          <p class="dpr-section__subtitle">Cơ cấu tổ chức tinh gọn, hiệu quả — đảm bảo phối hợp chặt chẽ giữa các bộ phận trong mọi dự án.</p>
+        </div>
+        <div class="dpr-org reveal">
+          <div class="dpr-org__ceo">
+            <div class="dpr-org__ceo-name">Nguyễn Văn Thịnh</div>
+            <div class="dpr-org__ceo-role">Tổng Giám đốc</div>
+          </div>
+          <div class="dpr-org__line"></div>
+          <div class="dpr-org__departments reveal-stagger">
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Phòng Kỹ thuật</div>
+              <div class="dpr-org__dept-head">Trần Đức Hùng — GĐ Kỹ thuật</div>
+              <div class="dpr-org__dept-count">45 kỹ sư</div>
+            </div>
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Phòng Dự án</div>
+              <div class="dpr-org__dept-head">Lê Minh Đức — GĐ Dự án</div>
+              <div class="dpr-org__dept-count">30 nhân sự</div>
+            </div>
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Phòng Thiết kế</div>
+              <div class="dpr-org__dept-head">Phạm Thu Lan — Trưởng phòng</div>
+              <div class="dpr-org__dept-count">20 kỹ sư</div>
+            </div>
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Xưởng Sản xuất</div>
+              <div class="dpr-org__dept-head">Vũ Quốc Tuấn — Trưởng phòng</div>
+              <div class="dpr-org__dept-count">180 công nhân</div>
+            </div>
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Phòng Tài chính</div>
+              <div class="dpr-org__dept-head">Hoàng Thanh Nga — GĐ Tài chính</div>
+              <div class="dpr-org__dept-count">15 nhân sự</div>
+            </div>
+            <div class="dpr-org__dept">
+              <div class="dpr-org__dept-name">Phòng ATLĐ</div>
+              <div class="dpr-org__dept-head">Nguyễn Hoàng Sơn — Trưởng phòng</div>
+              <div class="dpr-org__dept-count">12 nhân sự</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">6</span>
+          <span class="dpr-stats__label">Phòng ban chính</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">350+</span>
+          <span class="dpr-stats__label">Tổng nhân sự</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">45</span>
+          <span class="dpr-stats__label">Kỹ sư chuyên môn</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">180</span>
+          <span class="dpr-stats__label">Công nhân lành nghề</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Chứng Chỉ -->
-    <main class="page page--subpage" id="page-about-cert">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Chứng Chỉ</h1>
-          <p class="content-page__intro">Các chứng chỉ năng lực, ISO và giấy phép hành nghề của Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-cert">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-structure-detail.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Chứng Chỉ & Năng Lực</h1>
+          <p class="page-hero__subtitle">Tiêu chuẩn quốc tế, chất lượng hàng đầu</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Chứng nhận</span>
+          <h2 class="dpr-section__title">Các chứng chỉ & giấy phép</h2>
+          <p class="dpr-section__subtitle">Tiến Thịnh JSC đạt đầy đủ các chứng chỉ quốc tế và giấy phép hành nghề theo quy định.</p>
+        </div>
+        <div class="dpr-cert-grid reveal-stagger">
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">🏅</span>
+            <div class="dpr-cert-card__year">Chứng nhận quốc tế</div>
+            <h3 class="dpr-cert-card__title">ISO 9001:2015</h3>
+            <p class="dpr-cert-card__desc">Hệ thống quản lý chất lượng — áp dụng cho toàn bộ quy trình sản xuất và thi công kết cấu thép.</p>
+          </div>
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">🛡️</span>
+            <div class="dpr-cert-card__year">Chứng nhận quốc tế</div>
+            <h3 class="dpr-cert-card__title">ISO 14001:2015</h3>
+            <p class="dpr-cert-card__desc">Hệ thống quản lý môi trường — cam kết phát triển bền vững và giảm thiểu tác động môi trường.</p>
+          </div>
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">⚡</span>
+            <div class="dpr-cert-card__year">Chứng nhận quốc tế</div>
+            <h3 class="dpr-cert-card__title">ISO 45001:2018</h3>
+            <p class="dpr-cert-card__desc">Hệ thống quản lý an toàn và sức khỏe nghề nghiệp — đảm bảo môi trường làm việc an toàn.</p>
+          </div>
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">🔧</span>
+            <div class="dpr-cert-card__year">Tiêu chuẩn Mỹ</div>
+            <h3 class="dpr-cert-card__title">AWS D1.1 — Hàn kết cấu</h3>
+            <p class="dpr-cert-card__desc">Tiêu chuẩn hàn kết cấu thép của Hiệp hội Hàn Hoa Kỳ — áp dụng cho tất cả mối hàn chịu lực.</p>
+          </div>
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">📋</span>
+            <div class="dpr-cert-card__year">Giấy phép</div>
+            <h3 class="dpr-cert-card__title">Năng lực xây dựng Hạng I</h3>
+            <p class="dpr-cert-card__desc">Giấy phép năng lực hoạt động xây dựng Hạng I — đủ điều kiện thi công công trình cấp đặc biệt.</p>
+          </div>
+          <div class="dpr-cert-card">
+            <span class="dpr-cert-card__icon">🏗️</span>
+            <div class="dpr-cert-card__year">Chứng nhận</div>
+            <h3 class="dpr-cert-card__title">Nhà thầu uy tín</h3>
+            <p class="dpr-cert-card__desc">Được công nhận là nhà thầu uy tín bởi các tập đoàn FDI: Samsung, LG, Hyundai, và nhiều đối tác quốc tế.</p>
+          </div>
         </div>
       </div>
     </main>
 
     <!-- Page: Giải Thưởng -->
-    <main class="page page--subpage" id="page-about-awards">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Giải Thưởng</h1>
-          <p class="content-page__intro">Những giải thưởng và danh hiệu ghi nhận thành tựu của Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-about-awards">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-roof-structure.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Giải Thưởng</h1>
+          <p class="page-hero__subtitle">Ghi nhận thành tựu & đóng góp</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Thành tựu</span>
+          <h2 class="dpr-section__title">Những dấu ấn đáng tự hào</h2>
+          <p class="dpr-section__subtitle">Giải thưởng và danh hiệu ghi nhận nỗ lực không ngừng của Tiến Thịnh JSC.</p>
+        </div>
+        <div class="dpr-award-timeline reveal-stagger">
+          <div class="dpr-award-item">
+            <div class="dpr-award-item__year">2024</div>
+            <h3 class="dpr-award-item__title">Top 10 Nhà thầu Kết cấu thép uy tín</h3>
+            <div class="dpr-award-item__org">Hiệp hội Kết cấu Thép Việt Nam (VSSA)</div>
+            <p class="dpr-award-item__desc">Vinh danh trong top 10 nhà thầu kết cấu thép có năng lực thi công và sản xuất hàng đầu tại Việt Nam.</p>
+          </div>
+          <div class="dpr-award-item">
+            <div class="dpr-award-item__year">2023</div>
+            <h3 class="dpr-award-item__title">Giải thưởng Công trình chất lượng cao</h3>
+            <div class="dpr-award-item__org">Bộ Xây dựng Việt Nam</div>
+            <p class="dpr-award-item__desc">Dự án tòa nhà văn phòng 25 tầng tại Hà Nội đạt giải thưởng Công trình chất lượng cao năm 2023.</p>
+          </div>
+          <div class="dpr-award-item">
+            <div class="dpr-award-item__year">2022</div>
+            <h3 class="dpr-award-item__title">Doanh nghiệp xanh Việt Nam</h3>
+            <div class="dpr-award-item__org">Phòng Thương mại và Công nghiệp (VCCI)</div>
+            <p class="dpr-award-item__desc">Ghi nhận nỗ lực trong phát triển bền vững, ứng dụng công nghệ sản xuất xanh và tiết kiệm năng lượng.</p>
+          </div>
+          <div class="dpr-award-item">
+            <div class="dpr-award-item__year">2020</div>
+            <h3 class="dpr-award-item__title">Nhà thầu xuất sắc — Samsung C&T</h3>
+            <div class="dpr-award-item__org">Samsung C&T Corporation</div>
+            <p class="dpr-award-item__desc">Được Samsung C&T vinh danh là nhà thầu phụ xuất sắc nhất trong các dự án nhà máy Samsung tại Việt Nam.</p>
+          </div>
+          <div class="dpr-award-item">
+            <div class="dpr-award-item__year">2018</div>
+            <h3 class="dpr-award-item__title">Huy chương Vàng chất lượng</h3>
+            <div class="dpr-award-item__org">Tổng hội Xây dựng Việt Nam</div>
+            <p class="dpr-award-item__desc">Được trao Huy chương Vàng về chất lượng sản phẩm kết cấu thép tại Triển lãm Xây dựng Quốc tế Vietbuild.</p>
+          </div>
         </div>
       </div>
     </main>
 
     <!-- Page: Năng Lực Sản Xuất -->
-    <main class="page page--subpage" id="page-cap-prod">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Năng Lực Sản Xuất</h1>
-          <p class="content-page__intro">Hệ thống nhà xưởng, dây chuyền sản xuất kết cấu thép hiện đại của Tiến Thịnh JSC.</p>
+    <!-- Page: Năng Lực Sản Xuất -->
+    <main class="page page--subpage page--has-hero" id="page-cap-prod">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-warehouse.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Năng Lực Sản Xuất</h1>
+          <p class="page-hero__subtitle">Hệ thống nhà xưởng & dây chuyền sản xuất hiện đại</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-warehouse.png" alt="Xưởng sản xuất Tiến Thịnh" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Hệ thống sản xuất</span>
+          <h2 class="dpr-split__title">20.000m² xưởng sản xuất — công suất 3.000 tấn/tháng</h2>
+          <div class="dpr-split__text">
+            <p>Nhà xưởng của Tiến Thịnh JSC được đầu tư xây dựng theo tiêu chuẩn công nghiệp hiện đại, trang bị đầy đủ cầu trục 20 tấn, hệ thống làm mát và chiếu sáng tiên tiến.</p>
+            <p>Dây chuyền sản xuất bao gồm: <strong>máy cắt CNC, máy khoan CNC, máy hàn tự động SAW/MAG</strong>, máy nắn thép hình và hệ thống sơn phun tự động.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Quy trình</span>
+          <h2 class="dpr-section__title">Quy trình sản xuất khép kín</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Thiết kế chi tiết & BIM</h3>
+            <p class="dpr-feature__desc">Mô hình 3D BIM chi tiết, ra bản vẽ shop drawing chính xác trước khi đưa vào sản xuất.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Cắt & Gia công CNC</h3>
+            <p class="dpr-feature__desc">Hệ thống CNC tự động hóa, độ chính xác ±1mm, xử lý thép tấm dày đến 100mm.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Hàn & Kiểm tra NDT</h3>
+            <p class="dpr-feature__desc">Hàn theo tiêu chuẩn AWS D1.1, kiểm tra NDT 100% mối hàn chịu lực bằng siêu âm và từ tính.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Sơn & Xuất xưởng</h3>
+            <p class="dpr-feature__desc">Xử lý bề mặt Sa 2.5, sơn hệ Epoxy/PU chống ăn mòn. Đánh số, đóng gói và vận chuyển đến công trường.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">20.000m²</span>
+          <span class="dpr-stats__label">Diện tích xưởng</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">3.000</span>
+          <span class="dpr-stats__label">Tấn/tháng công suất</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">8</span>
+          <span class="dpr-stats__label">Dây chuyền CNC</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">180+</span>
+          <span class="dpr-stats__label">Công nhân lành nghề</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Năng Lực Thi Công -->
-    <main class="page page--subpage" id="page-cap-construct">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Năng Lực Thi Công</h1>
-          <p class="content-page__intro">Năng lực thi công lắp đặt kết cấu thép tại công trường của Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-cap-construct">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-frame-building.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Năng Lực Thi Công</h1>
+          <p class="page-hero__subtitle">Lắp đặt kết cấu thép tại công trường trên toàn quốc</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-frame-building.png" alt="Thi công kết cấu thép" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Thi công lắp đặt</span>
+          <h2 class="dpr-split__title">Đội ngũ thi công chuyên nghiệp — đảm bảo tiến độ & an toàn</h2>
+          <div class="dpr-split__text">
+            <p>Tiến Thịnh sở hữu đội ngũ <strong>50+ kỹ sư giám sát</strong> và <strong>200+ công nhân thi công</strong> có chứng chỉ nghề, kinh nghiệm lắp đặt đa dạng loại hình công trình.</p>
+            <p>Năng lực lắp đặt tối đa <strong>2.000 tấn kết cấu thép/tháng</strong>, triển khai đồng thời nhiều dự án trên toàn quốc.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-split dpr-split--reverse reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-bridge.png" alt="Công trình cầu thép" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Loại hình công trình</span>
+          <h2 class="dpr-split__title">Đa dạng loại hình — từ nhà xưởng đến cầu thép</h2>
+          <div class="dpr-split__text">
+            <p><strong>Nhà xưởng công nghiệp:</strong> Nhà xưởng sản xuất, kho logistic, trung tâm phân phối lên đến 50.000m².</p>
+            <p><strong>Nhà cao tầng:</strong> Kết cấu thép cho tòa nhà văn phòng, thương mại lên đến 30 tầng.</p>
+            <p><strong>Cầu & công trình đặc biệt:</strong> Cầu thép, mái vòm, trạm điện, nhà máy năng lượng tái tạo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">50+</span>
+          <span class="dpr-stats__label">Kỹ sư giám sát</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">200+</span>
+          <span class="dpr-stats__label">Công nhân thi công</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">2.000</span>
+          <span class="dpr-stats__label">Tấn/tháng lắp đặt</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">500+</span>
+          <span class="dpr-stats__label">Dự án hoàn thành</span>
         </div>
       </div>
     </main>
 
-    <!-- Page: Năng Lực Nhà Máy Thiết Bị -->
-    <main class="page page--subpage" id="page-cap-factory">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Năng Lực Nhà Máy & Thiết Bị</h1>
-          <p class="content-page__intro">Trang thiết bị, máy móc hiện đại phục vụ sản xuất và thi công.</p>
+    <!-- Page: Năng Lực Nhà Máy & Thiết Bị -->
+    <main class="page page--subpage page--has-hero" id="page-cap-factory">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-structure-detail.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Nhà Máy & Thiết Bị</h1>
+          <p class="page-hero__subtitle">Trang thiết bị hiện đại phục vụ sản xuất & thi công</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Thiết bị chủ lực</span>
+          <h2 class="dpr-section__title">Máy móc nhập khẩu từ Đức, Nhật, Hàn Quốc</h2>
+          <p class="dpr-section__subtitle">Đầu tư hơn 50 tỷ đồng vào trang thiết bị sản xuất, đảm bảo năng suất và chất lượng hàng đầu.</p>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">🔧</div>
+            <h3 class="dpr-feature__title">Máy cắt CNC Plasma/Oxy</h3>
+            <p class="dpr-feature__desc">Ficep — cắt thép tấm dày 6-100mm, chiều rộng 3.200mm, độ chính xác ±0.5mm.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">⚡</div>
+            <h3 class="dpr-feature__title">Máy khoan CNC 3 trục</h3>
+            <p class="dpr-feature__desc">Peddinghaus — khoan thép hình H/I lên đến H1000, năng suất 120 lỗ/giờ.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">🔩</div>
+            <h3 class="dpr-feature__title">Hệ thống hàn SAW/MAG</h3>
+            <p class="dpr-feature__desc">Lincoln Electric — hàn tự động chìm (SAW) cho mối hàn dài, hàn MAG cho liên kết phức tạp.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">🏗️</div>
+            <h3 class="dpr-feature__title">Cầu trục 20-50 tấn</h3>
+            <p class="dpr-feature__desc">6 cầu trục trong xưởng, 2 cẩu bánh xích 50T và 4 xe cẩu 25T phục vụ lắp đặt.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">50 tỷ+</span>
+          <span class="dpr-stats__label">Đầu tư thiết bị</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">30+</span>
+          <span class="dpr-stats__label">Máy móc chính</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">6</span>
+          <span class="dpr-stats__label">Cầu trục 20-50T</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">100%</span>
+          <span class="dpr-stats__label">Nhập khẩu chính hãng</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Quản Lý An Toàn Lao Động -->
-    <main class="page page--subpage" id="page-cap-safety">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Quản Lý An Toàn Lao Động</h1>
-          <p class="content-page__intro">Chính sách và quy trình đảm bảo an toàn lao động tại Tiến Thịnh JSC.</p>
+    <main class="page page--subpage page--has-hero" id="page-cap-safety">
+      <div class="page-hero" style="--hero-bg: url('/images/construction-team.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">An Toàn Lao Động</h1>
+          <p class="page-hero__subtitle">Zero Accident là mục tiêu — không phải khẩu hiệu</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/construction-team.png" alt="An toàn lao động" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Chính sách ATLĐ</span>
+          <h2 class="dpr-split__title">ISO 45001:2018 — An toàn là ưu tiên số 1</h2>
+          <div class="dpr-split__text">
+            <p>Tiến Thịnh JSC áp dụng hệ thống quản lý an toàn và sức khỏe nghề nghiệp theo tiêu chuẩn <strong>ISO 45001:2018</strong>, đảm bảo môi trường làm việc an toàn cho toàn bộ nhân viên.</p>
+            <p>Mỗi dự án đều có <strong>cán bộ ATLĐ chuyên trách</strong>, kiểm tra an toàn hàng ngày, huấn luyện định kỳ và diễn tập ứng phó sự cố.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Chương trình</span>
+          <h2 class="dpr-section__title">4 trụ cột an toàn</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Đào tạo & Huấn luyện</h3>
+            <p class="dpr-feature__desc">100% nhân viên được đào tạo ATLĐ trước khi vào công trường. Huấn luyện định kỳ mỗi tháng.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Giám sát & Kiểm tra</h3>
+            <p class="dpr-feature__desc">Kiểm tra an toàn hàng ngày, tuần, tháng. Camera giám sát 24/7 tại các vị trí nguy hiểm.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Trang bị PPE</h3>
+            <p class="dpr-feature__desc">Cung cấp đầy đủ trang bị bảo hộ: mũ, kính, găng tay, dây an toàn chất lượng cao cho toàn bộ nhân viên.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Ứng phó sự cố</h3>
+            <p class="dpr-feature__desc">Kế hoạch ứng phó khẩn cấp, y tế tại chỗ, diễn tập PCCC và sơ cứu định kỳ mỗi quý.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">2M+</span>
+          <span class="dpr-stats__label">Giờ không tai nạn</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">0</span>
+          <span class="dpr-stats__label">Tai nạn nghiêm trọng 2024</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">100%</span>
+          <span class="dpr-stats__label">Nhân viên đào tạo ATLĐ</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">12</span>
+          <span class="dpr-stats__label">Cán bộ ATLĐ chuyên trách</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Tổng Thầu Xây Dựng -->
-    <main class="page page--subpage" id="page-svc-general">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Tổng Thầu Xây Dựng</h1>
-          <p class="content-page__intro">Dịch vụ tổng thầu xây dựng công trình công nghiệp và dân dụng.</p>
+    <main class="page page--subpage page--has-hero" id="page-svc-general">
+      <div class="page-hero" style="--hero-bg: url('/images/high-rise-steel.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Tổng Thầu Xây Dựng</h1>
+          <p class="page-hero__subtitle">Giải pháp trọn gói từ thiết kế đến bàn giao</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/high-rise-steel.png" alt="Tổng thầu xây dựng" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Dịch vụ tổng thầu</span>
+          <h2 class="dpr-split__title">Một đầu mối — Trọn gói giải pháp xây dựng</h2>
+          <div class="dpr-split__text">
+            <p>Với vai trò <strong>tổng thầu xây dựng</strong>, Tiến Thịnh JSC đảm nhận toàn bộ quá trình từ tư vấn thiết kế, sản xuất kết cấu thép, thi công xây dựng đến bàn giao hoàn thiện.</p>
+            <p>Khách hàng chỉ cần một đầu mối liên hệ, tiết kiệm thời gian và chi phí quản lý dự án.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Phạm vi</span>
+          <h2 class="dpr-section__title">Năng lực tổng thầu</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Nhà xưởng công nghiệp</h3>
+            <p class="dpr-feature__desc">Nhà xưởng sản xuất, kho logistic lên đến 50.000m². Thi công nền, móng, kết cấu và mái hoàn thiện.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Nhà cao tầng kết cấu thép</h3>
+            <p class="dpr-feature__desc">Chung cư, văn phòng, trung tâm thương mại sử dụng kết cấu thép composite lên đến 30 tầng.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Công trình năng lượng</h3>
+            <p class="dpr-feature__desc">Nhà máy điện mặt trời, điện gió, trạm biến áp — M&E và cơ khí chuyên dụng.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Hạ tầng giao thông</h3>
+            <p class="dpr-feature__desc">Cầu thép, cống hộp, công trình giao thông với yêu cầu kỹ thuật cao và tiến độ gấp.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">100+</span>
+          <span class="dpr-stats__label">Dự án tổng thầu</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">98%</span>
+          <span class="dpr-stats__label">Đúng tiến độ</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">5.000 tỷ+</span>
+          <span class="dpr-stats__label">Tổng giá trị dự án</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">Hạng I</span>
+          <span class="dpr-stats__label">Năng lực xây dựng</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Tư Vấn Đầu Tư Dự Án FDI -->
-    <main class="page page--subpage" id="page-svc-fdi">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Tư Vấn Đầu Tư Dự Án FDI</h1>
-          <p class="content-page__intro">Hỗ trợ tư vấn toàn diện cho các dự án đầu tư trực tiếp nước ngoài.</p>
+    <main class="page page--subpage page--has-hero" id="page-svc-fdi">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-roof-structure.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Tư Vấn Dự Án FDI</h1>
+          <p class="page-hero__subtitle">Đối tác tin cậy cho các nhà đầu tư quốc tế</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-roof-structure.png" alt="Dự án FDI" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">FDI Consulting</span>
+          <h2 class="dpr-split__title">Hỗ trợ toàn diện từ pháp lý đến thi công</h2>
+          <div class="dpr-split__text">
+            <p>Tiến Thịnh JSC là đối tác chiến lược của nhiều tập đoàn FDI hàng đầu: <strong>Samsung, LG, Hyundai, Panasonic, Toyota</strong>.</p>
+            <p>Chúng tôi hỗ trợ nhà đầu tư nước ngoài: tư vấn chọn địa điểm, thủ tục pháp lý, thiết kế nhà máy, quản lý xây dựng và vận hành thử.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Dịch vụ</span>
+          <h2 class="dpr-section__title">Gói tư vấn FDI toàn diện</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Nghiên cứu khả thi</h3>
+            <p class="dpr-feature__desc">Khảo sát địa chất, quy hoạch, đánh giá tác động môi trường và lập báo cáo nghiên cứu khả thi.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Pháp lý & Giấy phép</h3>
+            <p class="dpr-feature__desc">Hỗ trợ xin giấy phép đầu tư, xây dựng, PCCC, môi trường — đại diện làm việc với cơ quan nhà nước.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Thiết kế & Thi công</h3>
+            <p class="dpr-feature__desc">Thiết kế nhà máy theo tiêu chuẩn quốc tế, thi công trọn gói theo mô hình EPC/Design-Build.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Bảo trì & Vận hành</h3>
+            <p class="dpr-feature__desc">Hỗ trợ vận hành thử, đào tạo nhân sự và bảo trì định kỳ sau khi bàn giao nhà máy.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">50+</span>
+          <span class="dpr-stats__label">Dự án FDI</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">8</span>
+          <span class="dpr-stats__label">Quốc gia đối tác</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">Samsung</span>
+          <span class="dpr-stats__label">Đối tác chiến lược</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">EPC</span>
+          <span class="dpr-stats__label">Mô hình tổng thầu</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Sản Xuất Kết Cấu Thép -->
-    <main class="page page--subpage" id="page-svc-steel">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Sản Xuất Kết Cấu Thép</h1>
-          <p class="content-page__intro">Dịch vụ gia công, chế tạo kết cấu thép chất lượng cao.</p>
+    <main class="page page--subpage page--has-hero" id="page-svc-steel">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-structure-detail.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Sản Xuất Kết Cấu Thép</h1>
+          <p class="page-hero__subtitle">Gia công chế tạo theo tiêu chuẩn quốc tế</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-structure-detail.png" alt="Sản xuất kết cấu thép" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Sản phẩm</span>
+          <h2 class="dpr-split__title">Đa dạng sản phẩm kết cấu thép chất lượng cao</h2>
+          <div class="dpr-split__text">
+            <p>Tiến Thịnh sản xuất đầy đủ các loại kết cấu thép: <strong>khung nhà tiền chế, cột thép, dầm thép, xà gồ, panel, tole</strong> và các cấu kiện đặc biệt theo yêu cầu.</p>
+            <p>Sản phẩm đạt tiêu chuẩn: <strong>ASTM A36, A572, A992</strong> cho thép kết cấu và <strong>AWS D1.1/D1.8</strong> cho mối hàn.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-split dpr-split--reverse reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-warehouse.png" alt="Dây chuyền sản xuất" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Tiêu chuẩn</span>
+          <h2 class="dpr-split__title">Quản lý chất lượng nghiêm ngặt</h2>
+          <div class="dpr-split__text">
+            <p><strong>ITP (Inspection & Test Plan):</strong> Mỗi dự án đều có kế hoạch kiểm tra chi tiết từ nguyên liệu đầu vào đến thành phẩm.</p>
+            <p><strong>NDT Testing:</strong> 100% mối hàn chịu lực được kiểm tra bằng phương pháp siêu âm (UT), từ tính (MT), thẩm thấu (PT).</p>
+            <p><strong>Traceability:</strong> Truy xuất nguồn gốc vật liệu và chứng chỉ hàn cho mọi cấu kiện.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">100.000+</span>
+          <span class="dpr-stats__label">Tấn thép đã sản xuất</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">AWS D1.1</span>
+          <span class="dpr-stats__label">Tiêu chuẩn hàn</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">100%</span>
+          <span class="dpr-stats__label">Kiểm tra NDT</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">ISO 9001</span>
+          <span class="dpr-stats__label">Quản lý chất lượng</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Tư Vấn Thiết Kế -->
-    <main class="page page--subpage" id="page-svc-design">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Tư Vấn Thiết Kế</h1>
-          <p class="content-page__intro">Dịch vụ tư vấn thiết kế kết cấu thép và kiến trúc công trình.</p>
+    <main class="page page--subpage page--has-hero" id="page-svc-design">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-bridge.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Tư Vấn Thiết Kế</h1>
+          <p class="page-hero__subtitle">Giải pháp thiết kế tối ưu bằng công nghệ BIM</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-bridge.png" alt="Tư vấn thiết kế" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Thiết kế</span>
+          <h2 class="dpr-split__title">BIM 3D — Thiết kế chính xác, thi công hiệu quả</h2>
+          <div class="dpr-split__text">
+            <p>Đội ngũ <strong>20 kỹ sư thiết kế</strong> sử dụng phần mềm Tekla Structures, AutoCAD, và <strong>mô hình BIM 3D</strong> để tối ưu hóa thiết kế kết cấu thép.</p>
+            <p>BIM giúp phát hiện sớm xung đột MEP, tiết kiệm vật liệu lên đến <strong>15%</strong> và rút ngắn thời gian thi công.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Dịch vụ thiết kế</span>
+          <h2 class="dpr-section__title">Phạm vi tư vấn</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">01</div>
+            <h3 class="dpr-feature__title">Thiết kế kết cấu</h3>
+            <p class="dpr-feature__desc">Tính toán, mô phỏng và thiết kế kết cấu thép theo TCVN, Eurocode, AISC.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">02</div>
+            <h3 class="dpr-feature__title">Shop Drawing</h3>
+            <p class="dpr-feature__desc">Bản vẽ chế tạo chi tiết (Shop Drawing) từ mô hình BIM, sẵn sàng đưa vào sản xuất.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">03</div>
+            <h3 class="dpr-feature__title">Tối ưu vật liệu</h3>
+            <p class="dpr-feature__desc">Tối ưu hóa tiết diện, tổ hợp cắt thép (nesting) giảm phế liệu xuống dưới 5%.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">04</div>
+            <h3 class="dpr-feature__title">Phối hợp BIM</h3>
+            <p class="dpr-feature__desc">Phối hợp đa ngành (kiến trúc, MEP, kết cấu) trên nền tảng BIM 360, phát hiện xung đột sớm.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">20</span>
+          <span class="dpr-stats__label">Kỹ sư thiết kế</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">BIM 3D</span>
+          <span class="dpr-stats__label">Công nghệ thiết kế</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">15%</span>
+          <span class="dpr-stats__label">Tiết kiệm vật liệu</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">300+</span>
+          <span class="dpr-stats__label">Dự án thiết kế</span>
         </div>
       </div>
     </main>
 
     <!-- Page: Kinh Doanh Thương Mại -->
-    <main class="page page--subpage" id="page-svc-trade">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title">Kinh Doanh Thương Mại</h1>
-          <p class="content-page__intro">Cung cấp vật tư, thiết bị xây dựng và kết cấu thép.</p>
+    <main class="page page--subpage page--has-hero" id="page-svc-trade">
+      <div class="page-hero" style="--hero-bg: url('/images/steel-warehouse.png')">
+        <div class="page-hero__overlay"></div>
+        <div class="page-hero__content">
+          <h1 class="page-hero__title">Kinh Doanh Thương Mại</h1>
+          <p class="page-hero__subtitle">Cung cấp vật tư, thiết bị & giải pháp thép</p>
         </div>
-        <div class="subpage-content">
-          <p>Nội dung trang đang được cập nhật. Vui lòng quay lại sau.</p>
+      </div>
+
+      <div class="dpr-split reveal">
+        <div class="dpr-split__media">
+          <img src="/images/steel-warehouse.png" alt="Kinh doanh thương mại" loading="lazy" />
+        </div>
+        <div class="dpr-split__content">
+          <span class="dpr-split__label">Thương mại</span>
+          <h2 class="dpr-split__title">Cung cấp vật liệu thép chất lượng từ nguồn uy tín</h2>
+          <div class="dpr-split__text">
+            <p>Tiến Thịnh JSC là đại lý phân phối chính thức của nhiều nhà sản xuất thép hàng đầu: <strong>Hòa Phát, Vina Kyoei, Posco Vietnam, JFE Steel</strong>.</p>
+            <p>Cung cấp đầy đủ: thép hình (H, I, C, L), thép tấm, thép ống, bu lông cường độ cao và vật tư phụ trợ xây dựng.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-section reveal">
+        <div class="dpr-section__header">
+          <span class="dpr-section__label">Sản phẩm</span>
+          <h2 class="dpr-section__title">Danh mục sản phẩm thương mại</h2>
+          <div class="dpr-section__divider"></div>
+        </div>
+        <div class="dpr-features reveal-stagger">
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">🔩</div>
+            <h3 class="dpr-feature__title">Thép hình kết cấu</h3>
+            <p class="dpr-feature__desc">H, I, C, L, T — đầy đủ kích thước theo JIS, ASTM. Thép nhập khẩu từ Hàn Quốc, Nhật Bản.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">📋</div>
+            <h3 class="dpr-feature__title">Thép tấm & cuộn</h3>
+            <p class="dpr-feature__desc">Thép tấm cán nóng/nguội dày 1.2-100mm, thép cuộn mạ kẽm, mạ màu — tồn kho lớn, giao nhanh.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">⚡</div>
+            <h3 class="dpr-feature__title">Bu lông & Liên kết</h3>
+            <p class="dpr-feature__desc">Bu lông cường độ cao F10T, neo chờ, tấm đệm và phụ kiện kết cấu thép đạt tiêu chuẩn.</p>
+          </div>
+          <div class="dpr-feature">
+            <div class="dpr-feature__number">🏗️</div>
+            <h3 class="dpr-feature__title">Tole & Vật liệu mái</h3>
+            <p class="dpr-feature__desc">Tole mạ màu, tole cách nhiệt EPS/PU, xà gồ Z/C — đủ màu, đủ dày, giao toàn quốc.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dpr-stats reveal">
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">10.000+</span>
+          <span class="dpr-stats__label">Tấn tồn kho</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">24h</span>
+          <span class="dpr-stats__label">Giao hàng nhanh</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">Hòa Phát</span>
+          <span class="dpr-stats__label">Đại lý chính thức</span>
+        </div>
+        <div class="dpr-stats__item">
+          <span class="dpr-stats__number">63</span>
+          <span class="dpr-stats__label">Tỉnh/TP giao hàng</span>
         </div>
       </div>
     </main>
