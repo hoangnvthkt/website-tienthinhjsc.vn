@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   Plus, Pencil, Trash2, GripVertical, Eye, EyeOff,
-  Save, X, ChevronUp, ChevronDown, Milestone, Loader2, AlertCircle, RefreshCw
+  Save, X, ChevronUp, ChevronDown, Milestone, Loader2, AlertCircle, RefreshCw, Image as ImageIcon
 } from 'lucide-react'
+import MediaPickerModal from '@/components/shared/MediaPickerModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface HistoryMilestone {
@@ -14,6 +15,7 @@ interface HistoryMilestone {
   stat_value: string | null
   stat_label: string | null
   image_url: string | null
+  link_url: string | null
   color: string
   sort_order: number
   is_active: boolean
@@ -32,6 +34,7 @@ const EMPTY_FORM: Omit<HistoryMilestone, 'id' | 'created_at'> = {
   stat_value: '',
   stat_label: '',
   image_url: '',
+  link_url: '',
   color: '#3b82f6',
   sort_order: 0,
   is_active: true,
@@ -47,6 +50,7 @@ export default function HistoryMilestonesPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState({ ...EMPTY_FORM })
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
 
   // ── Fetch ──
   async function fetchMilestones() {
@@ -57,7 +61,7 @@ export default function HistoryMilestonesPage() {
       .select('*')
       .order('sort_order', { ascending: true })
     if (error) setError(error.message)
-    else setMilestones(data || [])
+    else setMilestones((data || []) as HistoryMilestone[])
     setLoading(false)
   }
 
@@ -79,6 +83,7 @@ export default function HistoryMilestonesPage() {
       stat_value: m.stat_value || '',
       stat_label: m.stat_label || '',
       image_url: m.image_url || '',
+      link_url: m.link_url || '',
       color: m.color || '#3b82f6',
       sort_order: m.sort_order,
       is_active: m.is_active,
@@ -110,6 +115,7 @@ export default function HistoryMilestonesPage() {
       stat_value: form.stat_value?.trim() || null,
       stat_label: form.stat_label?.trim() || null,
       image_url: form.image_url?.trim() || null,
+      link_url: form.link_url?.trim() || null,
       color: form.color,
       sort_order: Number(form.sort_order),
       is_active: form.is_active,
@@ -330,16 +336,75 @@ export default function HistoryMilestonesPage() {
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image Thumbnail */}
             <div className="col-span-2">
-              <label className="block text-xs text-gray-400 mb-1.5 font-medium">URL ảnh (tùy chọn)</label>
+              <label className="block text-xs text-gray-400 mb-1.5 font-medium">Ảnh thumbnail</label>
+              <div className="flex gap-3 items-start">
+                {/* Preview */}
+                <div
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-white/15 bg-white/3 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-violet-500/50 transition-colors"
+                  onClick={() => setShowMediaPicker(true)}
+                  title="Click để chọn ảnh"
+                >
+                  {form.image_url ? (
+                    <img
+                      src={form.image_url}
+                      alt="thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-gray-600">
+                      <ImageIcon size={20} />
+                      <span className="text-[10px]">Chọn ảnh</span>
+                    </div>
+                  )}
+                </div>
+                {/* Controls */}
+                <div className="flex-1 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaPicker(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 text-xs font-medium rounded-lg transition-colors"
+                  >
+                    <ImageIcon size={13} />
+                    {form.image_url ? 'Đổi ảnh' : 'Chọn từ thư viện'}
+                  </button>
+                  {/* Manual URL input */}
+                  <input
+                    type="url"
+                    value={form.image_url || ''}
+                    onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-gray-400 text-xs focus:outline-none focus:border-violet-500 transition-colors font-mono"
+                    placeholder="Hoặc dán URL ảnh..."
+                  />
+                  {form.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, image_url: '' }))}
+                      className="text-xs text-red-400 hover:text-red-300 text-left"
+                    >
+                      ✕ Xóa ảnh
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Link URL */}
+            <div className="col-span-2">
+              <label className="block text-xs text-gray-400 mb-1.5 font-medium">
+                🔗 URL liên kết (khi click card)
+              </label>
               <input
-                type="url"
-                value={form.image_url || ''}
-                onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
+                type="text"
+                value={form.link_url || ''}
+                onChange={e => setForm(f => ({ ...f, link_url: e.target.value }))}
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors font-mono"
-                placeholder="https://..."
+                placeholder="/du-an/nha-xuong-samsung  hoặc  https://..."
               />
+              <p className="text-xs text-gray-600 mt-1">
+                Đường dẫn nội bộ (VD: <code className="text-violet-400">/du-an/ten-du-an</code>) hoặc URL đầy đủ. Khi click vào card đang active sẽ chuyển trang.
+              </p>
             </div>
           </div>
 
@@ -403,11 +468,32 @@ export default function HistoryMilestonesPage() {
                 {m.year}
               </div>
 
+              {/* Thumbnail mini */}
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/5 border border-white/8 flex items-center justify-center">
+                {m.image_url ? (
+                  <img src={m.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <ImageIcon size={14} className="text-gray-700" />
+                )}
+              </div>
+
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white truncate">{m.title}</span>
                   {!m.is_active && <span className="text-xs text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">Ẩn</span>}
+                  {m.link_url && (
+                    <a
+                      href={m.link_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-violet-400 hover:text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"
+                      title={m.link_url}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      🔗 Link
+                    </a>
+                  )}
                 </div>
                 {m.description && (
                   <p className="text-xs text-gray-500 mt-0.5 truncate">{m.description}</p>
@@ -499,6 +585,17 @@ export default function HistoryMilestonesPage() {
           <span className="ml-auto">Tổng: {milestones.length} mốc</span>
         </div>
       )}
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        open={showMediaPicker}
+        title="Chọn ảnh thumbnail"
+        onSelect={(url) => {
+          setForm(f => ({ ...f, image_url: url }))
+          setShowMediaPicker(false)
+        }}
+        onClose={() => setShowMediaPicker(false)}
+      />
     </div>
   )
 }

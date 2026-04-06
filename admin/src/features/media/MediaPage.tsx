@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Upload, Trash2, Copy, Check, Search, Image as ImageIcon, X, FileImage, AlertCircle, Grid3x3, List, CheckSquare, Square, Filter } from 'lucide-react'
+import { Upload, Trash2, Copy, Check, Search, Image as ImageIcon, X, FileImage, AlertCircle, Grid3x3, List, CheckSquare, Square, Filter, Music } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -64,7 +64,7 @@ export default function MediaPage() {
 
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
-      if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('application/pdf')) continue
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('application/pdf') && !file.type.startsWith('audio/')) continue
       setUploadProgress({ current: i + 1, total: fileArray.length })
       try {
         const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
@@ -163,6 +163,7 @@ export default function MediaPage() {
     if (i.file_type?.startsWith('image/')) return 'image'
     if (i.file_type?.startsWith('video/')) return 'video'
     if (i.file_type?.includes('pdf')) return 'pdf'
+    if (i.file_type?.startsWith('audio/')) return 'audio'
     return 'other'
   }))]
 
@@ -172,6 +173,7 @@ export default function MediaPage() {
     if (typeFilter === 'image') return matchSearch && i.file_type?.startsWith('image/')
     if (typeFilter === 'video') return matchSearch && i.file_type?.startsWith('video/')
     if (typeFilter === 'pdf') return matchSearch && i.file_type?.includes('pdf')
+    if (typeFilter === 'audio') return matchSearch && i.file_type?.startsWith('audio/')
     return matchSearch
   })
 
@@ -205,6 +207,7 @@ export default function MediaPage() {
                   {fileTypes.includes('image') && <option value="image">🖼️ Ảnh</option>}
                   {fileTypes.includes('video') && <option value="video">🎬 Video</option>}
                   {fileTypes.includes('pdf') && <option value="pdf">📄 PDF</option>}
+                  {fileTypes.includes('audio') && <option value="audio">🎵 Âm thanh</option>}
                 </select>
                 <Filter size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -236,7 +239,7 @@ export default function MediaPage() {
               className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
               <Upload size={16} /> {uploading ? `${uploadProgress.current}/${uploadProgress.total}` : 'Upload'}
             </button>
-            <input ref={fileInputRef} type="file" accept="image/*,video/*,.pdf" multiple className="hidden"
+            <input ref={fileInputRef} type="file" accept="image/*,video/*,.pdf,audio/*,.mp3,.ogg,.wav,.m4a,.aac" multiple className="hidden"
               onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }} />
           </div>
         </div>
@@ -293,9 +296,16 @@ export default function MediaPage() {
                     bulkMode && bulkSelected.has(item.id) ? 'border-amber-400 ring-2 ring-amber-200' :
                     selected?.id === item.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-gray-200'
                   }`}>
-                  <div className="aspect-square bg-gray-100">
-                    <img src={item.file_url} alt={item.alt_text || item.file_name}
-                      className="w-full h-full object-cover" loading="lazy" />
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                    {item.file_type?.startsWith('audio/') ? (
+                      <div className="flex flex-col items-center gap-1 text-violet-400">
+                        <Music size={32} />
+                        <span className="text-[10px] text-gray-400 font-medium uppercase">{item.file_name.split('.').pop()}</span>
+                      </div>
+                    ) : (
+                      <img src={item.file_url} alt={item.alt_text || item.file_name}
+                        className="w-full h-full object-cover" loading="lazy" />
+                    )}
                   </div>
                   {/* Bulk checkbox */}
                   {bulkMode && (
@@ -336,7 +346,13 @@ export default function MediaPage() {
                         : <Square size={18} className="text-gray-300" />}
                     </div>
                   )}
-                  <img src={item.file_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  {item.file_type?.startsWith('audio/') ? (
+                    <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                      <Music size={20} className="text-violet-500" />
+                    </div>
+                  ) : (
+                    <img src={item.file_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{item.file_name}</p>
                     <p className="text-xs text-gray-400">{formatSize(item.file_size)} · {new Date(item.created_at).toLocaleDateString('vi-VN')}</p>

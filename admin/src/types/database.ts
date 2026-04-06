@@ -59,6 +59,7 @@ export type Database = {
           stat_value: string | null
           stat_label: string | null
           image_url: string | null
+          link_url: string | null
           color: string
           sort_order: number
           is_active: boolean
@@ -73,6 +74,7 @@ export type Database = {
           stat_value?: string | null
           stat_label?: string | null
           image_url?: string | null
+          link_url?: string | null
           color?: string
           sort_order?: number
           is_active?: boolean
@@ -87,6 +89,7 @@ export type Database = {
           stat_value?: string | null
           stat_label?: string | null
           image_url?: string | null
+          link_url?: string | null
           color?: string
           sort_order?: number
           is_active?: boolean

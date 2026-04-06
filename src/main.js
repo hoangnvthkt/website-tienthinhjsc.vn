@@ -4,6 +4,7 @@ import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact
 import { t, getLang, setLang, initI18n, getRouteTitle, translations } from './i18n.js';
 import { initChatbot } from './chatbot.js';
 import { initHistory3D, destroyHistory3D } from './history3d.js';
+import { initMusicPlayer } from './musicPlayer.js';
 
 
 // ============================================
@@ -57,8 +58,8 @@ const gridView = $('#gridView');
 const btnSpace = $('#btnSpace');
 const btnGrid = $('#btnGrid');
 const viewToggle = $('#viewToggle');
-const btnHistory3d = $('#btnHistory3d');
-const history3dSection = $('#history3dSection');
+const btnHistory3d = null; // removed — now on separate page
+const history3dSection = null;
 let history3dLoaded = false;
 
 const backBtn = $('#backBtn');
@@ -138,7 +139,7 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     'about-letter': 'thu-ngo',
     'about-vision': 'tam-nhin-su-menh',
     'about-values': 'gia-tri-cot-loi',
-    'history': 'lich-su',
+    // 'history' removed — now uses standalone 3D page
     'about-org': 'so-do-to-chuc',
     'about-cert': 'chung-chi',
     'about-awards': 'giai-thuong',
@@ -223,16 +224,21 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
 
   // Update URL via History API
   if (pushHistory) {
-    const slug = PAGE_TO_SLUG[page] || '/';
-    const title = getRouteTitle(page);
-    const fullTitle = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
+    let slug;
+    if (page === 'product' && data?.id) {
+      slug = `/du-an/${data.id}`;
+    } else {
+      slug = PAGE_TO_SLUG[page] || '/';
+    }
+    const pageTitle = page === 'product' && data?.name ? data.name : getRouteTitle(page);
+    const fullTitle = page === 'home' ? SITE_NAME : `${pageTitle} — ${SITE_NAME}`;
     document.title = fullTitle;
-    history.pushState({ page, data: null }, fullTitle, slug);
+    history.pushState({ page, data: page === 'product' ? data : null }, fullTitle, slug);
   }
 
-  // Update document title (also for popstate)
-  const title = getRouteTitle(page);
-  document.title = page === 'home' ? SITE_NAME : `${title} — ${SITE_NAME}`;
+  // Update document title
+  const pageTitle2 = (page === 'product' && data?.name) ? data.name : getRouteTitle(page);
+  document.title = page === 'home' ? SITE_NAME : `${pageTitle2} — ${SITE_NAME}`;
 
   // Show/hide header based on page
   const statsBar = document.getElementById('statsBar');
@@ -252,6 +258,25 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     viewToggle.style.display = '';
     if (statsBar) statsBar.style.display = '';
     cleanupCube();
+  } else if (page === 'history') {
+    // History page — init 3D coverflow
+    header.style.display = 'none';
+    viewToggle.style.display = 'none';
+    if (statsBar) statsBar.style.display = 'none';
+    cleanupCube();
+    stopAutoFly();
+    stopRoadAnimation();
+    // Lazy init History3D
+    const h3dSection = $('#history3dSection');
+    if (h3dSection && !history3dLoaded) {
+      history3dLoaded = true;
+      requestAnimationFrame(() => initHistory3D(h3dSection));
+    }
+    // Back button
+    const h3dClose = $('#h3dClose');
+    if (h3dClose) {
+      h3dClose.onclick = () => navigateTo('home');
+    }
   } else {
     header.style.display = '';
     viewToggle.style.display = 'none';
@@ -308,7 +333,7 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
 // Handle browser Back / Forward buttons
 window.addEventListener('popstate', (e) => {
   if (e.state && e.state.page) {
-    navigateTo(e.state.page, null, { pushHistory: false });
+    navigateTo(e.state.page, e.state.data || null, { pushHistory: false });
   } else {
     // Fallback: read URL
     const route = ROUTES[window.location.pathname];
@@ -321,20 +346,36 @@ let pendingDynamicPath = null; // For dynamic pages not yet loaded
 
 function initRouter() {
   const path = window.location.pathname;
+
+  // Handle /du-an/:id deep links
+  const productMatch = path.match(/^\/du-an\/(.+)$/);
+  if (productMatch) {
+    const productId = productMatch[1];
+    // Products may not be loaded yet — wait for them
+    const tryOpenProduct = () => {
+      const found = products.find(p => p.id === productId);
+      if (found) {
+        navigateTo('product', found, { pushHistory: false });
+        history.replaceState({ page: 'product', data: found }, document.title, path);
+      } else {
+        // Retry after products load from Supabase
+        setTimeout(tryOpenProduct, 600);
+      }
+    };
+    navigateTo('home', null, { pushHistory: false });
+    setTimeout(tryOpenProduct, 300);
+    return;
+  }
+
   const route = ROUTES[path];
   if (route && route.page !== 'home') {
-    // Navigate to the page matching the URL, without pushing history (it's the initial load)
     navigateTo(route.page, null, { pushHistory: false });
-    // Replace current history entry so Back button works correctly
     history.replaceState({ page: route.page }, document.title, path);
   } else if (path === '/' || path === '') {
     history.replaceState({ page: 'home' }, document.title, '/');
   } else {
-    // URL not in static routes — could be a dynamic page (loaded later)
-    // Store path and show home for now; loadDynamicPages will re-route
     pendingDynamicPath = path;
     navigateTo('home', null, { pushHistory: false });
-    // Don't replaceState yet — keep the URL as-is
   }
 }
 
@@ -1943,7 +1984,7 @@ function setupViewToggle() {
   btnSpace.addEventListener('click', () => switchView('space'));
   if (btnRoad) btnRoad.addEventListener('click', () => switchView('road'));
   btnGrid.addEventListener('click', () => switchView('grid'));
-  if (btnHistory3d) btnHistory3d.addEventListener('click', () => switchView('history3d'));
+  // btnHistory3d removed — now on separate page
 
   // Close button inside History3D section
   const h3dClose = $('#h3dClose');
@@ -1960,26 +2001,14 @@ function switchView(view) {
   btnSpace.classList.toggle('active', view === 'space');
   if (btnRoad) btnRoad.classList.toggle('active', view === 'road');
   btnGrid.classList.toggle('active', view === 'grid');
-  if (btnHistory3d) btnHistory3d.classList.toggle('active', view === 'history3d');
+  // btnHistory3d removed
 
   // Update views
   spaceView.classList.toggle('active', view === 'space');
   if (roadView) roadView.classList.toggle('active', view === 'road');
   gridView.classList.toggle('active', view === 'grid');
 
-  // History 3D section visibility
-  if (history3dSection) {
-    if (view === 'history3d') {
-      history3dSection.style.display = 'block';
-      // Lazy init Three.js on first open
-      if (!history3dLoaded) {
-        history3dLoaded = true;
-        requestAnimationFrame(() => initHistory3D(history3dSection));
-      }
-    } else {
-      history3dSection.style.display = 'none';
-    }
-  }
+  // History 3D removed from homepage — now on standalone page
 
   // Space mode
   if (view === 'space') {
@@ -1996,16 +2025,6 @@ function switchView(view) {
     startRoadAnimation();
     setHeaderRoadMode(true);
     document.body.classList.add('tree-mode');
-  } else if (view === 'history3d') {
-    // History 3D mode — hide space/road objects
-    stopAutoFly();
-    stopRoadAnimation();
-    setHeaderRoadMode(false);
-    stopAmbientSound();
-    document.body.classList.remove('tree-mode');
-    spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
-    roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
-    roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   } else {
     // Grid mode
     stopAutoFly();
@@ -3497,6 +3516,10 @@ async function applySettings() {
     document.head.appendChild(gaInit);
   }
 
+  // === Background Music Player ===
+  // Run after settings are available — initMusicPlayer reads from Supabase directly
+  initMusicPlayer();
+
   console.log('✅ Settings applied from Supabase');
 }
 
@@ -4049,6 +4072,10 @@ const PAGE_SLUG_MAP = {
  * Returns true if sections were found and rendered, false otherwise (fallback to static).
  */
 async function tryRenderDynamicPage(pageSlug) {
+  // Skip slugs that have dedicated standalone implementations  
+  const SKIP_DYNAMIC = ['lich-su'];
+  if (SKIP_DYNAMIC.includes(pageSlug)) return false;
+
   const sections = await fetchPageSections(pageSlug);
   if (!sections || sections.length === 0) return false;
 
@@ -4559,7 +4586,7 @@ const HFLOW_GROUPS = {
       { slug: 'thu-ngo',          pageId: 'page-about-letter', title: 'Thư Ngỏ' },
       { slug: 'tam-nhin-su-menh', pageId: 'page-about-vision', title: 'Tầm Nhìn & Sứ Mệnh' },
       { slug: 'gia-tri-cot-loi',  pageId: 'page-about-values', title: 'Giá Trị Cốt Lõi' },
-      { slug: 'lich-su',          pageId: 'page-history',       title: 'Lịch Sử' },
+      // 'lich-su' removed — now a standalone 3D history page
       { slug: 'so-do-to-chuc',    pageId: 'page-about-org',    title: 'Sơ Đồ Tổ Chức' },
       { slug: 'chung-chi',        pageId: 'page-about-cert',   title: 'Chứng Chỉ & Năng Lực' },
       { slug: 'giai-thuong',      pageId: 'page-about-awards', title: 'Giải Thưởng' },

@@ -277,47 +277,6 @@
           <span class="stats-bar__label" data-i18n="stats.staff">Nhân sự</span>
         </div>
       </div>
-      <!-- ═══════════════════════════════════════════════════
-           History 3D — Xoắn Ốc Lịch Sử (standalone section)
-           ═══════════════════════════════════════════════════ -->
-      <section class="history3d-section" id="history3dSection" style="display:none">
-        <!-- Three.js canvas -->
-        <canvas id="h3dCanvas"></canvas>
-
-        <!-- Scroll proxy (drives camera) -->
-        <div class="h3d-scroll-proxy" id="h3dScroll">
-          <div class="h3d-scroll-inner"></div>
-        </div>
-
-        <!-- HTML overlay cards -->
-        <div class="h3d-overlay" id="h3dOverlay"></div>
-
-        <!-- Progress dots sidebar -->
-        <div class="h3d-progress" id="h3dProgress"></div>
-
-        <!-- Section header -->
-        <div class="h3d-header">
-          <div class="h3d-header__tag">TIMELINE</div>
-          <h2 class="h3d-header__title">Hành Trình Phát Triển</h2>
-          <p class="h3d-header__sub">Tiến Thịnh JSC — Từ 2008 đến nay</p>
-        </div>
-
-        <!-- Scroll hint -->
-        <div class="h3d-hint" id="h3dHint">
-          <div class="h3d-hint__mouse">
-            <div class="h3d-hint__wheel"></div>
-          </div>
-          <span>Cuộn để khám phá</span>
-        </div>
-
-        <!-- Center year display -->
-        <div class="h3d-year-display" id="h3dYearDisplay"></div>
-
-        <!-- Close button -->
-        <button class="h3d-close" id="h3dClose" aria-label="Đóng History 3D">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </section>
 
       <!-- View Toggle -->
       <div class="view-toggle" id="viewToggle">
@@ -333,10 +292,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           <span data-i18n="view.grid">LƯỚI</span>
         </button>
-        <button class="view-toggle__btn view-toggle__btn--history3d" id="btnHistory3d" data-view="history3d">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2z"/><path d="M12 6v6l4 2"/><path d="M2 12h2M20 12h2M12 2v2M12 20v2"/></svg>
-          <span>LỊCH SỬ 3D</span>
-        </button>
+
       </div>
     </main>
 
@@ -418,63 +374,39 @@
 
     <!-- Page: History -->
     <main class="page page--history" id="page-history">
-      <div class="content-page">
-        <div class="content-page__hero">
-          <h1 class="content-page__title" data-i18n="history.title">Lịch Sử</h1>
-          <p class="content-page__intro" data-i18n="history.intro">Hành trình hơn 20 năm xây dựng và phát triển của Tiến Thịnh JSC — từ một doanh nghiệp nhỏ đến thương hiệu hàng đầu trong lĩnh vực kết cấu thép và xây lắp công nghiệp.</p>
+      <section class="history3d-section history3d-section--page" id="history3dSection">
+        <!-- Three.js canvas -->
+        <canvas id="h3dCanvas"></canvas>
+
+        <!-- HTML overlay cards -->
+        <div class="h3d-overlay" id="h3dOverlay"></div>
+
+        <!-- Progress dots -->
+        <div class="h3d-progress" id="h3dProgress"></div>
+
+        <!-- Section header -->
+        <div class="h3d-header">
+          <div class="h3d-header__tag">TIMELINE</div>
+          <h2 class="h3d-header__title" data-i18n="history.title">Hành Trình Phát Triển</h2>
+          <p class="h3d-header__sub">Tiến Thịnh JSC — Từ 2008 đến nay</p>
         </div>
-        <div class="timeline" id="timeline">
-          <div class="timeline__item">
-            <div class="timeline__year">2005</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2005.title">Thành lập công ty</h3>
-              <p data-i18n="history.2005.desc">Công ty Cổ phần Phát triển Đầu tư và Xây lắp Tiến Thịnh được thành lập tại Hà Nội, chuyên thi công kết cấu thép nhà xưởng công nghiệp với đội ngũ 15 kỹ sư và công nhân lành nghề.</p>
-            </div>
+
+        <!-- Scroll hint -->
+        <div class="h3d-hint" id="h3dHint">
+          <div class="h3d-hint__mouse">
+            <div class="h3d-hint__wheel"></div>
           </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2008</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2008.title">Mở rộng quy mô</h3>
-              <p data-i18n="history.2008.desc">Đầu tư xưởng sản xuất kết cấu thép 5.000m² tại KCN Từ Liêm, nâng công suất lên 500 tấn/tháng. Hoàn thành dự án nhà máy Samsung Electronics Bắc Ninh.</p>
-            </div>
-          </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2012</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2012.title">Đạt chứng nhận ISO 9001:2008</h3>
-              <p data-i18n="history.2012.desc">Tiêu chuẩn hóa quy trình sản xuất và thi công. Trở thành nhà thầu phụ uy tín cho các tổng thầu Nhật Bản, Hàn Quốc tại Việt Nam.</p>
-            </div>
-          </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2015</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2015.title">Bước ngoặt phát triển</h3>
-              <p data-i18n="history.2015.desc">Nâng cấp xưởng sản xuất lên 12.000m², công suất 1.500 tấn/tháng. Thực hiện thành công dự án cầu thép vượt sông dài 200m và nhà máy điện mặt trời 50MW.</p>
-            </div>
-          </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2018</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2018.title">Vươn tầm khu vực</h3>
-              <p data-i18n="history.2018.desc">Mở rộng sang thị trường Lào và Campuchia. Hoàn thành hơn 200 dự án lớn nhỏ, tổng khối lượng kết cấu thép vượt 50.000 tấn.</p>
-            </div>
-          </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2021</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2021.title">Chuyển đổi số</h3>
-              <p data-i18n="history.2021.desc">Áp dụng BIM trong thiết kế và quản lý dự án. Đầu tư dây chuyền tự động hóa cắt, khoan CNC nhập khẩu từ Đức, nâng cao độ chính xác và năng suất.</p>
-            </div>
-          </div>
-          <div class="timeline__item">
-            <div class="timeline__year">2024</div>
-            <div class="timeline__content">
-              <h3 data-i18n="history.2024.title">Khẳng định vị thế</h3>
-              <p data-i18n="history.2024.desc">Đội ngũ 350+ nhân sự, xưởng sản xuất 20.000m², công suất 3.000 tấn/tháng. Đối tác chiến lược của các tập đoàn FDI hàng đầu tại Việt Nam.</p>
-            </div>
-          </div>
+          <span>Cuộn để khám phá</span>
         </div>
-      </div>
+
+        <!-- Center year display -->
+        <div class="h3d-year-display" id="h3dYearDisplay"></div>
+
+        <!-- Back button -->
+        <button class="h3d-close" id="h3dClose" aria-label="Quay lại">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+      </section>
     </main>
 
     <!-- Page: Authors (Đội ngũ) -->
