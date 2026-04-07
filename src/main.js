@@ -1116,7 +1116,7 @@ function createRoadView() {
       colorPhase: (cubeIndex / 8) * ROAD_COLORS.length,
       sway: cubeIndex * 1.5, // deterministic starting phase
       swaySpeed: 0.0008 + (cubeIndex % 4) * 0.0004,
-      cubeSize: window.innerWidth <= 768 ? 120 : 160,
+      cubeSize: window.innerWidth <= 480 ? 65 : window.innerWidth <= 768 ? 85 : 160,
     };
 
     // Create cube DOM

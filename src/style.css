@@ -1316,6 +1316,41 @@ body.road-active .road-sound-toggle {
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
 }
 
+/* ─── Road View Mobile ─── */
+@media (max-width: 768px) {
+  .road-view .space-item__label {
+    font-size: 0.55rem;
+    padding: 2px 6px;
+    bottom: -22px;
+    opacity: 1;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .road-view .road-cube-year {
+    font-size: 9px !important;
+  }
+  .road-view .road-milestone {
+    font-size: 8px;
+    padding: 3px 6px;
+  }
+  .road-view .road-milestone__title {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 480px) {
+  .road-view .space-item__label {
+    font-size: 0.5rem;
+    padding: 2px 4px;
+    bottom: -18px;
+    max-width: 70px;
+  }
+  .road-view .road-cube-year {
+    font-size: 8px !important;
+  }
+}
+
 /* Stats bar & view toggle — dark glass when on tree view */
 body.tree-mode .stats-bar {
   background: rgba(10, 18, 30, 0.75) !important;
@@ -4976,21 +5011,22 @@ html[data-theme] .site-footer {
   }
 }
 
-/* Stats bar responsive — stack on small screens */
+/* Stats bar responsive — compact on small screens */
 @media (max-width: 640px) {
   .stats-bar {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
-    padding: 12px 16px;
-    gap: 4px;
-    bottom: 72px;
-    width: calc(100% - 32px);
-    max-width: 360px;
+    padding: 8px 12px;
+    gap: 2px;
+    bottom: 68px;
+    width: calc(100% - 24px);
+    max-width: 340px;
   }
 
   .stats-bar__item {
-    flex: 0 0 calc(50% - 8px);
-    padding: 8px 0;
+    flex: 1;
+    padding: 4px 0;
+    text-align: center;
   }
 
   .stats-bar__divider {
@@ -4998,11 +5034,11 @@ html[data-theme] .site-footer {
   }
 
   .stats-bar__number {
-    font-size: 1.3rem;
+    font-size: 1rem;
   }
 
   .stats-bar__label {
-    font-size: 0.58rem;
+    font-size: 0.48rem;
   }
 }
 
@@ -8152,6 +8188,7 @@ html[data-theme] .site-footer {
   inset: 0;
   z-index: 90;
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Canvas fills entire section */
@@ -8229,17 +8266,23 @@ html[data-theme] .site-footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0;
   pointer-events: none;
-  padding-top: clamp(80px, 10vh, 140px);
+  /* Push card below header: header top + title + sub ≈ 190px desktop, 220px mobile */
+  padding-top: clamp(190px, 27vh, 260px);
   padding-bottom: clamp(60px, 8vh, 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
 /* ═══ THE UNIFIED CARD ═══ */
 .h3d-card {
   position: relative;
-  width: clamp(360px, 50vw, 640px);
+  width: min(520px, calc(100vw - 32px));
+  margin: 0 auto;
+  box-sizing: border-box;
   pointer-events: auto;
   background: rgba(6, 12, 28, 0.88);
   backdrop-filter: blur(28px) saturate(180%);
@@ -8249,6 +8292,7 @@ html[data-theme] .site-footer {
   border-radius: 20px;
   padding: 28px 32px 24px;
   cursor: default;
+  overflow: hidden;
   box-shadow:
     0 8px 48px rgba(0,0,0,0.5),
     0 0 30px color-mix(in srgb, var(--accent, #3b82f6) 10%, transparent),
@@ -8495,13 +8539,52 @@ html[data-theme] .site-footer {
 
 /* ═══ MOBILE ═══ */
 @media (max-width: 768px) {
-  .h3d-card {
-    width: clamp(300px, 88vw, 520px);
-    padding: 22px 20px 18px;
+  /* Header nhỏ lại trên mobile */
+  .h3d-header {
+    top: 16px;
+    left: 16px;
   }
-  .h3d-card__header { gap: 12px; }
-  .h3d-card__icon { width: 42px; height: 42px; }
-  .h3d-card__cubes { gap: 10px; }
+  .h3d-header__tag {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+  .h3d-header__title {
+    font-size: clamp(16px, 4.5vw, 22px);
+    margin-bottom: 4px;
+  }
+  .h3d-header__sub {
+    font-size: 10px;
+  }
+  /* Overlay đẩy card xuống dưới header (tag+title+sub ≈ 80px + top 16px) */
+  .h3d-overlay {
+    padding-top: 120px;
+    padding-bottom: clamp(40px, 6vh, 70px);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .h3d-card {
+    width: calc(100vw - 32px);
+    max-width: 360px;
+    padding: 18px 16px 14px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .h3d-card__header { gap: 10px; }
+  .h3d-card__icon { width: 38px; height: 38px; border-radius: 10px; }
+  .h3d-card__year { font-size: 9px; letter-spacing: 0.2em; }
+  .h3d-card__title { font-size: clamp(14px, 4vw, 20px); }
+  .h3d-card__desc { font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
+  .h3d-card__stat { padding-top: 10px; margin-bottom: 8px; }
+  .h3d-card__stat-value { font-size: clamp(20px, 5vw, 28px); }
+  .h3d-card__stat-label { font-size: 11px; }
+  .h3d-card__cubes { gap: 8px; }
+  .h3d-card__cubes--visible { max-height: 300px; padding: 10px 0 4px; }
+  .h3d-cube-wrapper .space-item--3d {
+    transform: scale(0.85) !important;
+  }
+  .h3d-cube-label { font-size: 9px; max-width: 100px; }
+  .h3d-card__expand-hint { font-size: 10px; }
 }
 
 /* ═══ PROGRESS DOTS ═══ */
@@ -8672,19 +8755,6 @@ html[data-theme] .site-footer {
 
 /* ─── Mobile responsive ─── */
 @media (max-width: 768px) {
-  .h3d-card {
-    left: 8px !important;
-    right: 8px !important;
-    width: auto !important;
-    transform: translateX(-50%) translateY(-50%) scale(0.96) !important;
-  }
-  .h3d-card.active {
-    transform: translateX(-50%) translateY(-50%) scale(0.96) !important;
-  }
-  .h3d-card.near {
-    opacity: 0.2;
-    transform: translateX(-50%) translateY(-50%) perspective(600px) rotateY(35deg) translateZ(-60px) scale(0.7) !important;
-  }
   .h3d-header {
     top: clamp(70px, 10vh, 90px);
     left: 16px;

@@ -272,8 +272,9 @@ function buildCubes(ms) {
     wrapper.style.setProperty('--delay', `${idx * 0.1}s`);
 
     if (cubeFactory) {
+      const cubeSize = window.innerWidth <= 480 ? 80 : window.innerWidth <= 768 ? 110 : 160;
       const { el } = cubeFactory(proj, {
-        size:  160,
+        size:  cubeSize,
         rotX:  -18,
         rotY:  -30 + idx * 20,
         onClick: (p) => {
