@@ -255,7 +255,7 @@ function updateCard() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  BUILD CUBES inside the card
+//  BUILD 2D PROJECT CARDS inside the card
 // ══════════════════════════════════════════════════════════════════════════════
 function buildCubes(ms) {
   if (!_cubesArea) return;
@@ -264,44 +264,36 @@ function buildCubes(ms) {
   const projects = getLinkedProjects(ms);
   if (!projects.length) return;
 
-  const cubeFactory = window._createCubeMiniElement;
-
   projects.forEach((proj, idx) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'h3d-cube-wrapper';
-    wrapper.style.setProperty('--delay', `${idx * 0.1}s`);
+    const card = document.createElement('a');
+    card.className = 'h3d-projcard';
+    card.href = proj.slug ? `/du-an/${proj.slug}` : '#';
+    card.style.setProperty('--delay', `${idx * 0.08}s`);
+    card.addEventListener('click', (e) => {
+      if (_onProjectClick) {
+        e.preventDefault();
+        _onProjectClick(proj);
+      }
+    });
 
-    if (cubeFactory) {
-      const cubeSize = window.innerWidth <= 480 ? 80 : window.innerWidth <= 768 ? 110 : 160;
-      const { el } = cubeFactory(proj, {
-        size:  cubeSize,
-        rotX:  -18,
-        rotY:  -30 + idx * 20,
-        onClick: (p) => {
-          if (_onProjectClick) _onProjectClick(p);
-          else if (p.slug) window.location.href = `/du-an/${p.slug}`;
-        },
-      });
-      el.style.position = 'relative';
-      el.style.left     = 'auto';
-      el.style.top      = 'auto';
-      el.style.opacity  = '1';
-      el.style.pointerEvents = 'auto';
-      wrapper.appendChild(el);
-    } else {
-      wrapper.innerHTML = `
-        <div class="h3d-projcard-fallback">
-          <img src="${proj.featured_image || ''}" alt="${proj.title}" loading="lazy" />
-          <span>${proj.title}</span>
-        </div>`;
-    }
+    const imgHtml = proj.featured_image
+      ? `<img src="${proj.featured_image}" alt="${proj.title}" loading="lazy" />`
+      : `<div class="h3d-projcard__placeholder"></div>`;
 
-    const label = document.createElement('div');
-    label.className = 'h3d-cube-label';
-    label.textContent = proj.title || '';
-    wrapper.appendChild(label);
+    const catHtml = proj.category
+      ? `<span class="h3d-projcard__cat">${proj.category}</span>`
+      : '';
 
-    _cubesArea.appendChild(wrapper);
+    card.innerHTML = `
+      <div class="h3d-projcard__img">${imgHtml}</div>
+      ${catHtml}
+      <div class="h3d-projcard__info">
+        <div class="h3d-projcard__title">${proj.title || ''}</div>
+        <div class="h3d-projcard__year">${proj.year || ''}</div>
+      </div>
+    `;
+
+    _cubesArea.appendChild(card);
   });
 }
 
