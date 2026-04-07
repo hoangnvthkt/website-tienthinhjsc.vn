@@ -546,7 +546,7 @@ function createCubeMiniElement(product, opts = {}) {
     const faceDiv = document.createElement('div');
     faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
     const img = document.createElement('img');
-    img.src   = images[fi % images.length] || '/images/steel-warehouse.png';
+    img.src   = images[fi % images.length] || '/images/steel-warehouse.webp';
     img.alt   = `${product.name || product.title} - ${face}`;
     img.loading = 'lazy';
     faceDiv.appendChild(img);
@@ -558,7 +558,7 @@ function createCubeMiniElement(product, opts = {}) {
     const faceDiv = document.createElement('div');
     faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
     const logo = document.createElement('img');
-    logo.src = '/images/logo.png';
+    logo.src = '/images/logo.webp';
     logo.alt = 'Tiến Thịnh JSC';
     faceDiv.appendChild(logo);
     cube.appendChild(faceDiv);
@@ -1150,7 +1150,7 @@ function createRoadView() {
       const faceDiv = document.createElement('div');
       faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
       const logo = document.createElement('img');
-      logo.src = '/images/logo.png';
+      logo.src = '/images/logo.webp';
       logo.alt = 'Tiến Thịnh JSC';
       faceDiv.appendChild(logo);
       cube.appendChild(faceDiv);
@@ -2108,7 +2108,7 @@ function createSlider(product) {
     const faceDiv = document.createElement('div');
     faceDiv.className = `cube__face cube__face--${face}`;
     const logo = document.createElement('img');
-    logo.src = '/images/logo.png';
+    logo.src = '/images/logo.webp';
     logo.alt = 'Tiến Thịnh JSC';
     logo.className = 'cube__logo';
     faceDiv.appendChild(logo);
@@ -2623,7 +2623,7 @@ const staticPosts = [
     title: 'Khánh thành xưởng sản xuất mới 20.000m²',
     excerpt: 'Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức và công suất hàng nghìn tấn thép mỗi năm.',
     content: '<p>Tiến Thịnh JSC khánh thành xưởng sản xuất kết cấu thép mới tại KCN Đông Anh với dây chuyền CNC tự động hóa nhập khẩu từ Đức.</p><p>Xưởng mới có diện tích 20.000m² với công nghệ tiên tiến nhất Đông Nam Á, nâng tổng công suất sản xuất lên 30.000 tấn/năm.</p>',
-    featured_image: '/images/factory-interior.png',
+    featured_image: '/images/factory-interior.webp',
     category: 'Tin công trường',
     published_at: '2024-03-15T00:00:00Z',
   },
@@ -2632,7 +2632,7 @@ const staticPosts = [
     title: 'Tuyển dụng 50 kỹ sư và thợ hàn lành nghề',
     excerpt: 'Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế.',
     content: '<p>Mở rộng đội ngũ để đáp ứng nhu cầu tăng trưởng, Tiến Thịnh JSC tuyển dụng kỹ sư kết cấu, kỹ sư giám sát và thợ hàn chứng chỉ quốc tế.</p>',
-    featured_image: '/images/construction-team.png',
+    featured_image: '/images/construction-team.webp',
     category: 'Tuyển dụng',
     published_at: '2024-01-28T00:00:00Z',
   },
@@ -2641,7 +2641,7 @@ const staticPosts = [
     title: 'Ký hợp đồng dự án nhà máy LG Display — Hải Phòng',
     excerpt: 'Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép.',
     content: '<p>Tiến Thịnh JSC trúng thầu gói kết cấu thép nhà xưởng sản xuất cho dự án LG Display, với khối lượng 5.000 tấn thép được gia công và lắp dựng trong vòng 8 tháng.</p>',
-    featured_image: '/images/steel-roof-structure.png',
+    featured_image: '/images/steel-roof-structure.webp',
     category: 'Tin công trường',
     published_at: '2023-12-10T00:00:00Z',
   },
@@ -2650,7 +2650,7 @@ const staticPosts = [
     title: 'Đạt chứng nhận ISO 14001:2015 về Môi trường',
     excerpt: 'Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững.',
     content: '<p>Tiến Thịnh JSC hoàn thành đánh giá và nhận chứng nhận ISO 14001:2015, khẳng định cam kết phát triển bền vững và bảo vệ môi trường.</p>',
-    featured_image: '/images/steel-structure-detail.png',
+    featured_image: '/images/steel-structure-detail.webp',
     category: 'Kiến thức',
     published_at: '2023-09-05T00:00:00Z',
   },
@@ -2671,7 +2671,7 @@ async function renderNews() {
   const [featured, ...rest] = allPosts;
 
   // === Featured Article (Split: Gallery Left + Content Right) ===
-  const images = featured.images?.length ? featured.images : [featured.featured_image || '/images/factory-interior.png'];
+  const images = featured.images?.length ? featured.images : [featured.featured_image || '/images/factory-interior.webp'];
   const dateStr = featured.published_at ? new Date(featured.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   featuredContainer.innerHTML = `
@@ -2736,7 +2736,7 @@ async function renderNews() {
     article.dataset.postId = post.id;
     article.innerHTML = `
       <div class="news-card__img">
-        <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+        <img src="${post.featured_image || '/images/factory-interior.webp'}" alt="${post.title}" loading="lazy" />
         ${post.category ? `<span class="news-card__category">${post.category}</span>` : ''}
       </div>
       <div class="news-card__content">
@@ -2786,7 +2786,7 @@ function renderPostDetail(post) {
   const container = $('#postDetailContent');
   if (!container || !post) return;
 
-  const images = post.images?.length ? post.images : [post.featured_image || '/images/factory-interior.png'];
+  const images = post.images?.length ? post.images : [post.featured_image || '/images/factory-interior.webp'];
   const dateStr = post.published_at ? new Date(post.published_at).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   // Get related posts (same category, exclude current)
@@ -2848,7 +2848,7 @@ function renderPostDetail(post) {
             return `
               <article class="news-card" data-post-id="${r.id}">
                 <div class="news-card__img">
-                  <img src="${r.featured_image || '/images/factory-interior.png'}" alt="${r.title}" loading="lazy" />
+                  <img src="${r.featured_image || '/images/factory-interior.webp'}" alt="${r.title}" loading="lazy" />
                   ${r.category ? `<span class="news-card__category">${r.category}</span>` : ''}
                 </div>
                 <div class="news-card__content">
@@ -3361,7 +3361,7 @@ async function renderNewsSubpages() {
           return `
             <article class="news-card reveal" data-post-id="${post.id}">
               <div class="news-card__img">
-                <img src="${post.featured_image || '/images/factory-interior.png'}" alt="${post.title}" loading="lazy" />
+                <img src="${post.featured_image || '/images/factory-interior.webp'}" alt="${post.title}" loading="lazy" />
                 ${post.category ? `<span class="news-card__category">${post.category}</span>` : ''}
               </div>
               <div class="news-card__content">

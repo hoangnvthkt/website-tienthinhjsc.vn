@@ -940,3 +940,20 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// ─── Convenience type aliases (derived from DB schema) ───────────────────────
+export type ActivityLog    = Tables<'activity_logs'>
+export type Contact        = Tables<'contacts'>
+export type Document       = Tables<'documents'>
+export type Media          = Tables<'media'>
+export type NavigationItem = Tables<'navigation_items'>
+export type Page           = Tables<'pages'>
+export type PageSection    = Tables<'page_sections'>
+export type Post           = Tables<'posts'>
+export type PostCategory   = Tables<'post_categories'>
+export type Profile        = Tables<'profiles'>
+export type Project        = Tables<'projects'>
+export type ProjectCategory = Tables<'project_categories'>
+export type SectionTemplate = Tables<'section_templates'>
+export type SiteSetting    = Tables<'site_settings'>
+export type HistoryMilestone = Tables<'history_milestones'>

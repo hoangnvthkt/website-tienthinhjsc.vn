@@ -17,6 +17,8 @@ interface MediaItem {
 
 interface MediaPickerModalProps {
   open: boolean
+  /** optional custom title */
+  title?: string
   /** multi=true → can select multiple; returns string[] via onMultiSelect */
   multi?: boolean
   onSelect: (url: string) => void
@@ -28,11 +30,13 @@ const PAGE_SIZE = 30
 
 export default function MediaPickerModal({
   open,
+  title,
   multi = false,
   onSelect,
   onMultiSelect,
   onClose,
 }: MediaPickerModalProps) {
+
   const [items, setItems] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -115,7 +119,7 @@ export default function MediaPickerModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h3 className="text-base font-semibold text-gray-800">Kho Media</h3>
+            <h3 className="text-base font-semibold text-gray-800">{title || 'Kho Media'}</h3>
             {multi && selected.length > 0 && (
               <p className="text-xs text-blue-600 mt-0.5">Đã chọn {selected.length} ảnh</p>
             )}

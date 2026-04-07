@@ -25,11 +25,9 @@ const PAGE_FILTER_OPTIONS = [
   { value: 'proj-field', label: 'Theo lĩnh vực' },
 ]
 
-// Extended type to include new columns
-interface ProjectWithPages extends Project {
-  display_pages?: string[]
-  country?: string | null
-}
+// Project type already has display_pages and country, no need to extend
+type ProjectWithPages = Project
+
 
 export default function ProjectsListPage() {
   const { profile } = useAuth()
