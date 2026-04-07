@@ -1,16 +1,11 @@
 /**
- * MediaPickerModal — reusable image picker from the media library
- * Usage:
- *   <MediaPickerModal
- *     open={showPicker}
- *     onSelect={(url) => { setForm(f => ({ ...f, image_url: url })); setShowPicker(false) }}
- *     onClose={() => setShowPicker(false)}
- *   />
+ * MediaPickerModal — Shared modal to browse the Supabase media library.
+ * Used by both ImageUploader and MultiImageUploader.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Upload, Search, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { X, Search, Check, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 interface MediaItem {
   id: string
@@ -18,212 +13,211 @@ interface MediaItem {
   file_url: string
   file_type: string | null
   file_size: number | null
-  created_at: string
 }
 
-interface Props {
+interface MediaPickerModalProps {
   open: boolean
+  /** multi=true → can select multiple; returns string[] via onMultiSelect */
+  multi?: boolean
   onSelect: (url: string) => void
+  onMultiSelect?: (urls: string[]) => void
   onClose: () => void
-  title?: string
 }
 
-export default function MediaPickerModal({ open, onSelect, onClose, title = 'Chọn ảnh' }: Props) {
-  const { user } = useAuth()
-  const [items, setItems] = useState<MediaItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [search, setSearch] = useState('')
-  const [selected, setSelected] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+const PAGE_SIZE = 30
 
-  const fetchMedia = useCallback(async () => {
+export default function MediaPickerModal({
+  open,
+  multi = false,
+  onSelect,
+  onMultiSelect,
+  onClose,
+}: MediaPickerModalProps) {
+  const [items, setItems] = useState<MediaItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+
+  const load = useCallback(async (reset = false) => {
     setLoading(true)
-    const { data } = await supabase
+    const from = reset ? 0 : page * PAGE_SIZE
+    let query = supabase
       .from('media')
-      .select('id, file_name, file_url, file_type, file_size, created_at')
+      .select('id, file_name, file_url, file_type, file_size')
       .order('created_at', { ascending: false })
-    setItems((data as MediaItem[]) || [])
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (search.trim()) {
+      query = query.ilike('file_name', `%${search.trim()}%`)
+    }
+
+    const { data } = await query
     setLoading(false)
-  }, [])
+    if (!data) return
+
+    if (reset) {
+      setItems(data)
+      setPage(0)
+    } else {
+      setItems(prev => [...prev, ...data])
+    }
+    setHasMore(data.length === PAGE_SIZE)
+  }, [page, search])
 
   useEffect(() => {
     if (open) {
-      setSelected(null)
+      setSelected([])
       setSearch('')
-      fetchMedia()
+      setPage(0)
+      load(true)
     }
-  }, [open, fetchMedia])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
-  const handleUpload = async (files: FileList) => {
-    setUploading(true)
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue
-      try {
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-        const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { error: upErr } = await supabase.storage.from('media').upload(path, file, { contentType: file.type })
-        if (upErr) continue
-        const { data: urlData } = supabase.storage.from('media').getPublicUrl(path)
-        await supabase.from('media').insert({
-          file_name: file.name,
-          file_url: urlData.publicUrl,
-          file_type: file.type,
-          file_size: file.size,
-          uploaded_by: user?.id || null,
-        })
-      } catch { /* skip */ }
+  // Debounced search
+  useEffect(() => {
+    if (!open) return
+    const t = setTimeout(() => { setPage(0); load(true) }, 350)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, open])
+
+  const toggle = (url: string) => {
+    if (!multi) {
+      onSelect(url)
+      onClose()
+      return
     }
-    setUploading(false)
-    fetchMedia()
+    setSelected(prev =>
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    )
   }
 
-  const filtered = items.filter(i =>
-    i.file_type?.startsWith('image/') &&
-    i.file_name.toLowerCase().includes(search.toLowerCase())
-  )
+  const confirmMulti = () => {
+    if (onMultiSelect) onMultiSelect(selected)
+    onClose()
+  }
 
-  const formatSize = (bytes: number | null) => {
+  const fmt = (bytes: number | null) => {
     if (!bytes) return ''
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    if (bytes < 1024) return `${bytes}B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`
   }
 
   if (!open) return null
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-3xl max-h-[85vh] flex flex-col bg-[#141824] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-violet-500/15 rounded-lg">
-              <ImageIcon size={18} className="text-violet-400" />
-            </div>
-            <h2 className="text-sm font-semibold text-white">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h3 className="text-base font-semibold text-gray-800">Kho Media</h3>
+            {multi && selected.length > 0 && (
+              <p className="text-xs text-blue-600 mt-0.5">Đã chọn {selected.length} ảnh</p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* Upload button */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white/8 hover:bg-white/12 text-gray-300 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-            >
-              {uploading
-                ? <Loader2 size={13} className="animate-spin" />
-                : <Upload size={13} />}
-              {uploading ? 'Đang upload...' : 'Upload ảnh'}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
-            />
-            <button onClick={onClose} className="p-1.5 text-gray-500 hover:text-white transition-colors rounded">
-              <X size={16} />
+          <div className="flex items-center gap-3">
+            {multi && (
+              <button
+                type="button"
+                onClick={confirmMulti}
+                disabled={selected.length === 0}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Check size={14} />
+                Dùng {selected.length > 0 ? `(${selected.length})` : ''}
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="px-5 py-3 border-b border-white/8">
+        {/* Search */}
+        <div className="px-6 py-3 border-b border-gray-100">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm ảnh..."
-              className="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              placeholder="Tìm kiếm theo tên file..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none"
             />
           </div>
         </div>
 
         {/* Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-48 text-gray-500">
-              <Loader2 size={28} className="animate-spin" />
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading && items.length === 0 ? (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="animate-spin text-blue-500" size={28} />
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-500">
-              <ImageIcon size={40} className="mb-3 opacity-30" />
-              <p className="text-sm">{search ? 'Không tìm thấy ảnh nào' : 'Chưa có ảnh nào'}</p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-3 text-violet-400 text-sm hover:underline"
-              >
-                + Upload ảnh đầu tiên
-              </button>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+              <p className="text-sm">Không tìm thấy ảnh nào</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {filtered.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setSelected(item.file_url)}
-                  className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
-                    selected === item.file_url
-                      ? 'border-violet-500 ring-2 ring-violet-500/30'
-                      : 'border-white/8 hover:border-white/25'
-                  }`}
-                >
-                  <img
-                    src={item.file_url}
-                    alt={item.file_name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
-                    <p className="text-white text-[10px] font-medium text-center leading-tight truncate w-full px-1">
-                      {item.file_name}
-                    </p>
-                    <p className="text-white/60 text-[9px]">{formatSize(item.file_size)}</p>
-                  </div>
-                  {/* Check mark when selected */}
-                  {selected === item.file_url && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center">
-                      <Check size={10} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+            <>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {items.map(item => {
+                  const isSel = selected.includes(item.file_url)
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggle(item.file_url)}
+                      className={cn(
+                        'relative group rounded-lg overflow-hidden border-2 transition-all text-left',
+                        isSel
+                          ? 'border-blue-500 ring-2 ring-blue-500/30'
+                          : 'border-transparent hover:border-gray-300'
+                      )}
+                    >
+                      <img
+                        src={item.file_url}
+                        alt={item.file_name}
+                        className="w-full aspect-square object-cover"
+                        loading="lazy"
+                      />
+                      {/* Hover overlay with filename */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5">
+                        <p className="text-white text-[10px] leading-tight truncate">{item.file_name}</p>
+                        {item.file_size && (
+                          <p className="text-white/70 text-[10px]">{fmt(item.file_size)}</p>
+                        )}
+                      </div>
+                      {/* Check mark */}
+                      {isSel && (
+                        <div className="absolute top-1.5 right-1.5 bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center shadow">
+                          <Check size={11} className="text-white" />
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/8 bg-white/2">
-          <p className="text-xs text-gray-500">
-            {filtered.length} ảnh · {selected ? '1 đã chọn' : 'Chưa chọn'}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={() => selected && onSelect(selected)}
-              disabled={!selected}
-              className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <Check size={14} />
-              Chọn ảnh này
-            </button>
-          </div>
+              {hasMore && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    type="button"
+                    onClick={() => { setPage(p => p + 1); load() }}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+                    Xem thêm
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
