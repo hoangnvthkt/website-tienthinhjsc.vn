@@ -6,8 +6,14 @@ import { useAuth } from '@/hooks/useAuth'
 import { generateSlug } from '@/lib/utils'
 import { logActivity } from '@/lib/activityLog'
 import ImageUploader from '@/components/shared/ImageUploader'
+import MultiImageUploader from '@/components/shared/MultiImageUploader'
 import SeoFields from '@/components/shared/SeoFields'
-import type { ProjectCategory } from '@/types/database'
+
+interface ProjectCategory {
+  id: string
+  name: string
+  sort_order: number
+}
 
 // Display page options matching the website navigation
 const DISPLAY_PAGE_OPTIONS = [
@@ -32,6 +38,7 @@ interface FormData {
   description: string
   specs: string
   featured_image: string | null
+  images: string[]
   status: 'draft' | 'published'
   sort_order: number
   display_pages: string[]
@@ -43,7 +50,7 @@ interface FormData {
 
 const initial: FormData = {
   title: '', slug: '', subtitle: '', category: '', category_id: '', year: new Date().getFullYear().toString(),
-  description: '', specs: '', featured_image: null, status: 'draft', sort_order: 0,
+  description: '', specs: '', featured_image: null, images: [], status: 'draft', sort_order: 0,
   display_pages: ['proj-done'], country: '',
   meta_title: '', meta_description: '', is_featured: false
 }
@@ -69,7 +76,9 @@ export default function ProjectFormPage() {
         setForm({
           title: data.title, slug: data.slug, subtitle: data.subtitle || '', category: data.category || '',
           category_id: data.category_id || '', year: data.year || '', description: data.description || '',
-          specs: data.specs || '', featured_image: data.featured_image, status: (data.status as FormData['status']) || 'draft',
+          specs: data.specs || '', featured_image: data.featured_image,
+          images: Array.isArray((data as Record<string, unknown>).images) ? (data as Record<string, unknown>).images as string[] : [],
+          status: (data.status as FormData['status']) || 'draft',
           sort_order: data.sort_order,
           display_pages: (data as Record<string, unknown>).display_pages as string[] || ['proj-done'],
           country: (data as Record<string, unknown>).country as string || '',
@@ -117,6 +126,7 @@ export default function ProjectFormPage() {
       title: form.title, slug: form.slug || generateSlug(form.title), subtitle: form.subtitle || null,
       category: form.category || null, category_id: form.category_id || null, year: form.year || null,
       description: form.description || null, specs: form.specs || null, featured_image: form.featured_image,
+      images: form.images.length ? form.images : null,
       status: form.status, sort_order: form.sort_order,
       display_pages: form.display_pages,
       country: form.country || null,
@@ -288,6 +298,19 @@ export default function ProjectFormPage() {
             />
 
             <ImageUploader value={form.featured_image} onChange={(url) => handleChange('featured_image', url)} bucket="projects" label="Ảnh đại diện" />
+
+            {/* Cube images — mapped to the 4 side faces */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <MultiImageUploader
+                values={form.images}
+                onChange={(urls) => handleChange('images', urls as unknown as string)}
+                bucket="projects"
+                folder="cube"
+                maxImages={8}
+                label="Hình ảnh Cube 3D"
+                hint="Ảnh 1–4 sẽ lần lượt xuất hiện trên mặt: Trước, Phải, Sau, Trái của cube. Kéo để sắp xếp lại."
+              />
+            </div>
 
             <button type="submit" disabled={saving}
               className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">

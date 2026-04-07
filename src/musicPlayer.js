@@ -239,3 +239,15 @@ export function destroyMusicPlayer() {
   }
   isPlaying = false;
 }
+
+/** Toggle play / pause — can be called by external controls (e.g. road sound button) */
+export function toggleMusicPlayer() {
+  if (!audio) return;
+  if (isPlaying) pauseAudio();
+  else playAudio();
+}
+
+/** Returns current playing state */
+export function getMusicPlayState() {
+  return isPlaying;
+}

@@ -7,6 +7,14 @@ import {
 import MediaPickerModal from '@/components/shared/MediaPickerModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface ProjectItem {
+  id: string
+  title: string
+  category: string | null
+  featured_image: string | null
+  year: string | null
+}
+
 interface HistoryMilestone {
   id: string
   year: number
@@ -15,6 +23,7 @@ interface HistoryMilestone {
   stat_value: string | null
   stat_label: string | null
   image_url: string | null
+  project_ids: string[]
   link_url: string | null
   color: string
   sort_order: number
@@ -34,6 +43,7 @@ const EMPTY_FORM: Omit<HistoryMilestone, 'id' | 'created_at'> = {
   stat_value: '',
   stat_label: '',
   image_url: '',
+  project_ids: [],
   link_url: '',
   color: '#3b82f6',
   sort_order: 0,
@@ -51,6 +61,7 @@ export default function HistoryMilestonesPage() {
   const [form, setForm] = useState({ ...EMPTY_FORM })
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [showMediaPicker, setShowMediaPicker] = useState(false)
+  const [allProjects, setAllProjects] = useState<ProjectItem[]>([])
 
   // ── Fetch ──
   async function fetchMilestones() {
@@ -61,11 +72,19 @@ export default function HistoryMilestonesPage() {
       .select('*')
       .order('sort_order', { ascending: true })
     if (error) setError(error.message)
-    else setMilestones((data || []) as HistoryMilestone[])
+    else setMilestones((data || []).map((row: any) => ({ ...row, project_ids: Array.isArray(row.project_ids) ? row.project_ids : [] })) as HistoryMilestone[])
     setLoading(false)
   }
 
-  useEffect(() => { fetchMilestones() }, [])
+  async function fetchProjects() {
+    const { data } = await supabase
+      .from('projects')
+      .select('id, title, category, featured_image, year')
+      .order('year', { ascending: true })
+    setAllProjects((data || []) as ProjectItem[])
+  }
+
+  useEffect(() => { fetchMilestones(); fetchProjects() }, [])
 
   // ── Open form ──
   function openAdd() {
@@ -83,6 +102,7 @@ export default function HistoryMilestonesPage() {
       stat_value: m.stat_value || '',
       stat_label: m.stat_label || '',
       image_url: m.image_url || '',
+      project_ids: Array.isArray(m.project_ids) ? m.project_ids : [],
       link_url: m.link_url || '',
       color: m.color || '#3b82f6',
       sort_order: m.sort_order,
@@ -115,6 +135,7 @@ export default function HistoryMilestonesPage() {
       stat_value: form.stat_value?.trim() || null,
       stat_label: form.stat_label?.trim() || null,
       image_url: form.image_url?.trim() || null,
+      project_ids: form.project_ids || [],
       link_url: form.link_url?.trim() || null,
       color: form.color,
       sort_order: Number(form.sort_order),
@@ -403,8 +424,62 @@ export default function HistoryMilestonesPage() {
                 placeholder="/du-an/nha-xuong-samsung  hoặc  https://..."
               />
               <p className="text-xs text-gray-600 mt-1">
-                Đường dẫn nội bộ (VD: <code className="text-violet-400">/du-an/ten-du-an</code>) hoặc URL đầy đủ. Khi click vào card đang active sẽ chuyển trang.
+                Đường dẫn nội bộ (VD: <code className="text-violet-400">/du-an/ten-du-an</code>) hoặc URL đầy đủ.
               </p>
+            </div>
+
+            {/* ── PROJECT PICKER ── */}
+            <div className="col-span-2 border-t border-white/8 pt-4">
+              <label className="block text-xs text-gray-400 mb-2 font-medium">
+                🏗️ Sự kiện / Dự án gắn với mốc này
+                <span className="text-gray-600 font-normal ml-1">({form.project_ids.length} đã chọn)</span>
+              </label>
+              <p className="text-xs text-gray-600 mb-3">
+                Chọn các dự án/sự kiện sẽ hiển thị dưới dạng card 3D khi mốc này được active trên trang lịch sử.
+              </p>
+              {allProjects.length === 0 ? (
+                <div className="text-xs text-gray-600 italic py-3">Chưa có dự án nào trong hệ thống.</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-1">
+                  {allProjects.map(proj => {
+                    const isSelected = form.project_ids.includes(proj.id)
+                    return (
+                      <label
+                        key={proj.id}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-violet-600/15 border-violet-500/40'
+                            : 'bg-white/3 border-white/8 hover:border-white/15'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setForm(f => ({
+                              ...f,
+                              project_ids: isSelected
+                                ? f.project_ids.filter(id => id !== proj.id)
+                                : [...f.project_ids, proj.id],
+                            }))
+                          }}
+                          className="accent-violet-500 w-3.5 h-3.5 shrink-0"
+                        />
+                        <div className="w-9 h-9 rounded-md overflow-hidden shrink-0 bg-white/5">
+                          {proj.featured_image
+                            ? <img src={proj.featured_image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                            : <div className="w-full h-full flex items-center justify-center text-gray-700 text-xs">🏗️</div>
+                          }
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-white truncate">{proj.title}</div>
+                          <div className="text-[10px] text-gray-500">{proj.category} {proj.year ? `• ${proj.year}` : ''}</div>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

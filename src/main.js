@@ -4,7 +4,7 @@ import { fetchProjects, fetchPosts, fetchDocuments, fetchSettings, submitContact
 import { t, getLang, setLang, initI18n, getRouteTitle, translations } from './i18n.js';
 import { initChatbot } from './chatbot.js';
 import { initHistory3D, destroyHistory3D } from './history3d.js';
-import { initMusicPlayer } from './musicPlayer.js';
+import { initMusicPlayer, toggleMusicPlayer, getMusicPlayState } from './musicPlayer.js';
 
 
 // ============================================
@@ -126,6 +126,52 @@ for (const [slug, info] of Object.entries(ROUTES)) {
 const SITE_NAME = 'Tiến Thịnh JSC';
 
 // ============================================
+// iOS-STYLE PAGE TRANSITION
+// ============================================
+let _iosBusy = false;
+
+function iosPageSwap(fromPageName, toPageName, swapFn) {
+  const fromEl = document.querySelector('.page.active');
+  const toEl   = document.getElementById(`page-${toPageName}`);
+
+  // Skip animation: home page (3D), busy, or same page
+  const skip = _iosBusy || !fromEl || !toEl || fromEl === toEl
+            || fromPageName === 'home' || fromPageName === 'history'
+            || fromPageName === 'product';
+
+  if (skip) {
+    swapFn();
+    return;
+  }
+
+  _iosBusy = true;
+
+  const isBack = toPageName === 'home' || toPageName === 'history';
+  const dur    = isBack ? 360 : 380;
+
+  const inClass  = isBack ? 'page--ios-in-back'  : 'page--ios-in';
+  const outClass = isBack ? 'page--ios-out-back'  : 'page--ios-out';
+
+  // Run the DOM swap immediately (URL, header, etc.) but keep both visible
+  // via !important display:block from CSS animation classes
+  swapFn();
+
+  // Re-get active state after swap (swapFn may have changed it)
+  // fromEl is still the old one; toEl is now .active
+  fromEl.classList.remove('active');
+  fromEl.classList.add(outClass);
+
+  toEl.classList.add(inClass);
+
+  // After animation: full cleanup
+  setTimeout(() => {
+    fromEl.classList.remove(outClass);
+    toEl.classList.remove(inClass);
+    _iosBusy = false;
+  }, dur + 30);
+}
+
+// ============================================
 // NAVIGATION
 // ============================================
 function navigateTo(page, data = null, { pushHistory = true } = {}) {
@@ -174,7 +220,7 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     stopAutoFly();
     stopRoadAnimation();
     setHeaderRoadMode(false);
-    stopAmbientSound();
+    // (music continues — controlled by musicPlayer.js floating player)
     spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
@@ -211,22 +257,28 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     document.body.style.overflow = '';
   }
 
-  // Hide all pages
-  $$('.page').forEach(p => p.classList.remove('active'));
+  // iOS-style slide transition wraps the page swap
+  const _fromPage = state.currentPage || 'home';
+  iosPageSwap(_fromPage, page, () => {
+    // Hide all pages
+    $$('.page').forEach(p => p.classList.remove('active'));
 
-  // Show target page
-  const targetPage = $(`#page-${page}`);
-  if (targetPage) {
-    targetPage.classList.add('active');
-  }
+    // Show target page
+    const targetPage = $(`#page-${page}`);
+    if (targetPage) {
+      targetPage.classList.add('active');
+    }
+  });
 
   state.currentPage = page;
 
   // Update URL via History API
   if (pushHistory) {
     let slug;
-    if (page === 'product' && data?.id) {
-      slug = `/du-an/${data.id}`;
+    if (page === 'product' && data) {
+      // Prefer slug for clean URLs; fallback to id for products without slug
+      const productSlug = data.slug || data.id;
+      slug = `/du-an/${productSlug}`;
     } else {
       slug = PAGE_TO_SLUG[page] || '/';
     }
@@ -259,20 +311,19 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     if (statsBar) statsBar.style.display = '';
     cleanupCube();
   } else if (page === 'history') {
-    // History page — init 3D coverflow
     header.style.display = 'none';
     viewToggle.style.display = 'none';
     if (statsBar) statsBar.style.display = 'none';
     cleanupCube();
     stopAutoFly();
     stopRoadAnimation();
-    // Lazy init History3D
     const h3dSection = $('#history3dSection');
     if (h3dSection && !history3dLoaded) {
       history3dLoaded = true;
-      requestAnimationFrame(() => initHistory3D(h3dSection));
+      requestAnimationFrame(() => initHistory3D(h3dSection, {
+          onProjectClick: (project) => navigateTo('product', project),
+        }));
     }
-    // Back button
     const h3dClose = $('#h3dClose');
     if (h3dClose) {
       h3dClose.onclick = () => navigateTo('home');
@@ -284,26 +335,21 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     cleanupCube();
   }
 
-  // Hide space/road items & stop animations when leaving home
   if (page !== 'home') {
     stopAutoFly();
     stopRoadAnimation();
     setHeaderRoadMode(false);
-    stopAmbientSound();
     spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   }
 
-  // Scroll to top
   window.scrollTo(0, 0);
 
-  // Re-init scroll reveal for new page content
   if (page !== 'home') {
     setTimeout(() => setupScrollReveal(), 50);
   }
 
-  // Re-start animations if returning to home
   if (page === 'home' && state.currentView === 'space') {
     startAutoFly();
   } else if (page === 'home' && state.currentView === 'road') {
@@ -312,23 +358,21 @@ function navigateTo(page, data = null, { pushHistory = true } = {}) {
     setHeaderRoadMode(true);
   }
 
-  // Show/hide footer (visible on subpages, hidden on home & product)
   const footer = $('#siteFooter');
   if (footer) {
     const showFooter = page !== 'home' && page !== 'product';
-    footer.classList.remove('footer--revealed'); // Reset reveal animation
+    footer.classList.remove('footer--revealed');
     footer.classList.toggle('visible', showFooter);
   }
 
-  // Reset header compact state
   header.classList.remove('header--compact');
 
-  // Update active states on nav links
   $$('[data-page]').forEach(link => {
     const linkPage = link.getAttribute('data-page');
     link.classList.toggle('active', linkPage === page);
   });
 }
+
 
 // Handle browser Back / Forward buttons
 window.addEventListener('popstate', (e) => {
@@ -347,19 +391,27 @@ let pendingDynamicPath = null; // For dynamic pages not yet loaded
 function initRouter() {
   const path = window.location.pathname;
 
-  // Handle /du-an/:id deep links
+  // Handle /du-an/:slug or /du-an/:id deep links
   const productMatch = path.match(/^\/du-an\/(.+)$/);
   if (productMatch) {
-    const productId = productMatch[1];
+    const productKey = productMatch[1]; // could be slug or UUID
+    let retryCount = 0;
+    const MAX_RETRIES = 20; // ~12 seconds max wait
     // Products may not be loaded yet — wait for them
     const tryOpenProduct = () => {
-      const found = products.find(p => p.id === productId);
+      // Search by slug first (clean URL), then by id (UUID fallback)
+      const found = products.find(p => p.slug === productKey) ||
+                    products.find(p => p.id === productKey);
       if (found) {
         navigateTo('product', found, { pushHistory: false });
         history.replaceState({ page: 'product', data: found }, document.title, path);
-      } else {
+      } else if (retryCount++ < MAX_RETRIES) {
         // Retry after products load from Supabase
         setTimeout(tryOpenProduct, 600);
+      } else {
+        // Timed out — go home
+        console.warn('[Router] Product not found:', productKey);
+        navigateTo('home', null, { pushHistory: false });
       }
     };
     navigateTo('home', null, { pushHistory: false });
@@ -455,7 +507,125 @@ function setupSearch() {
 // ============================================
 // SPACE VIEW — Auto-Flying 3D Space (like Gufram)
 // GPU-optimized: only transform & opacity change per frame
+// ============================================================
+//  SHARED: createCubeMiniElement — reusable 3D cube factory
+//  Used by: Space view + History 3D section
+// ============================================================
+/**
+ * Creates a draggable 3D cube element for a product.
+ * @param {object} product  — product/project object with .images[], .name, .image
+ * @param {object} opts     — { size, rotX, rotY, onClick, onEnter, onLeave }
+ * @returns {{ el, cubeEl }} — the outer wrapper + inner cube element
+ */
+function createCubeMiniElement(product, opts = {}) {
+  const size     = opts.size  ?? BASE_SIZE;
+  const halfSize = size / 2;
+  let   rotX     = opts.rotX  ?? (-15 + Math.random() * 10);
+  let   rotY     = opts.rotY  ?? (-25 + Math.random() * 50);
+
+  // Outer wrapper
+  const item = document.createElement('div');
+  item.className = 'space-item space-item--3d';
+  item.style.width  = size + 'px';
+  item.style.height = size + 'px';
+  item.style.cursor = 'grab';
+
+  // Cube scene
+  const scene = document.createElement('div');
+  scene.className = 'cube-scene-mini';
+
+  const cube = document.createElement('div');
+  cube.className = 'cube-mini';
+  cube.style.setProperty('--cube-tz', halfSize + 'px');
+  cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
+  // 4 image side faces
+  const images   = (product.images?.length ? product.images : [product.image || product.featured_image]).filter(Boolean);
+  const sideFaces = ['front', 'right', 'back', 'left'];
+  sideFaces.forEach((face, fi) => {
+    const faceDiv = document.createElement('div');
+    faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+    const img = document.createElement('img');
+    img.src   = images[fi % images.length] || '/images/steel-warehouse.png';
+    img.alt   = `${product.name || product.title} - ${face}`;
+    img.loading = 'lazy';
+    faceDiv.appendChild(img);
+    cube.appendChild(faceDiv);
+  });
+
+  // Top & bottom brand faces
+  ['top', 'bottom'].forEach(face => {
+    const faceDiv = document.createElement('div');
+    faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
+    const logo = document.createElement('img');
+    logo.src = '/images/logo.png';
+    logo.alt = 'Tiến Thịnh JSC';
+    faceDiv.appendChild(logo);
+    cube.appendChild(faceDiv);
+  });
+
+  scene.appendChild(cube);
+  item.appendChild(scene);
+
+  // Label
+  const label = document.createElement('span');
+  label.className  = 'space-item__label';
+  label.textContent = product.name || product.title || '';
+  item.appendChild(label);
+
+  // ── Drag-to-rotate ──
+  let dragStartX = 0, dragStartY = 0;
+  let dragLastRotX = rotX, dragLastRotY = rotY;
+  let isDragging = false, didDrag = false;
+
+  const onDown = (e) => {
+    const pt = e.touches ? e.touches[0] : e;
+    dragStartX = pt.clientX; dragStartY = pt.clientY;
+    dragLastRotX = rotX; dragLastRotY = rotY;
+    isDragging = true; didDrag = false;
+    item.style.cursor = 'grabbing';
+    e.stopPropagation();
+  };
+  const onMove = (e) => {
+    if (!isDragging) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - dragStartX;
+    const dy = pt.clientY - dragStartY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) didDrag = true;
+    rotY = dragLastRotY + dx * 0.6;
+    rotX = Math.max(-75, Math.min(75, dragLastRotX - dy * 0.5));
+    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  };
+  const onUp = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    item.style.cursor = 'grab';
+  };
+
+  item.addEventListener('mousedown',  onDown);
+  item.addEventListener('touchstart', onDown, { passive: false });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: true });
+  window.addEventListener('mouseup',  onUp);
+  window.addEventListener('touchend', onUp);
+
+  // Click (only if not a drag)
+  item.addEventListener('click', (e) => {
+    if (didDrag) { e.preventDefault(); e.stopPropagation(); return; }
+    if (opts.onClick) opts.onClick(product, e);
+  });
+
+  if (opts.onEnter) item.addEventListener('mouseenter', opts.onEnter);
+  if (opts.onLeave) item.addEventListener('mouseleave', opts.onLeave);
+
+  return { el: item, cubeEl: cube };
+}
+
+// Expose for use in history3d.js module
+window._createCubeMiniElement = createCubeMiniElement;
+
 // ============================================
+
 
 const PERSPECTIVE  = 800;
 const BASE_SIZE    = window.innerWidth <= 480 ? 140 : window.innerWidth <= 768 ? 180 : 300;
@@ -491,122 +661,30 @@ function createSpaceView() {
     const z = 400 + (i / (products.length - 1)) * Z_SPREAD;
 
     // Golden-angle based distribution for maximally even spread
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~137.5 degrees
-    const angle = i * goldenAngle;
-    const radius = 0.20 + (i % 3) * 0.15; // 3 distance tiers: near/mid/far from center
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const angle  = i * goldenAngle;
+    const radius = 0.20 + (i % 3) * 0.15;
     const worldX = Math.cos(angle) * radius * vpW;
     const worldY = Math.sin(angle) * radius * vpH * 0.55;
 
-    // Per-cube fixed angle — unique so each cube looks different but static
-    const rotTiltX = -15 + Math.random() * 10;        // slight downward tilt for perspective
-    const rotFixedY = -25 + Math.random() * 50;       // fixed Y angle — shows 2 faces
+    const rotTiltX  = -15 + Math.random() * 10;
+    const rotFixedY = -25 + Math.random() * 50;
 
-    const obj = { product, z, worldX, worldY, el: null, cubeEl: null, rotFixedY: rotFixedY, rotTiltX };
+    const obj = { product, z, worldX, worldY, el: null, cubeEl: null, rotFixedY, rotTiltX };
     spaceObjects.push(obj);
 
-    // DOM — outer wrapper (positioned/scaled by renderSpaceFrame)
-    const item = document.createElement('div');
-    item.className = 'space-item space-item--3d';
-    item.style.width  = BASE_SIZE + 'px';
-    item.style.height = BASE_SIZE + 'px';
-
-    // Inner 3D cube scene
-    const scene = document.createElement('div');
-    scene.className = 'cube-scene-mini';
-
-    const cube = document.createElement('div');
-    cube.className = 'cube-mini';
-    const halfSize = BASE_SIZE / 2;
-    cube.style.setProperty('--cube-tz', halfSize + 'px');
-
-    // 4 image faces
-    const sideFaces = ['front', 'right', 'back', 'left'];
-    const images = product.images;
-    sideFaces.forEach((face, fi) => {
-      const faceDiv = document.createElement('div');
-      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
-      const img = document.createElement('img');
-      img.src = images[fi % images.length];
-      img.alt = `${product.name} - ${face}`;
-      img.loading = (i < 4) ? 'eager' : 'lazy';
-      faceDiv.appendChild(img);
-      cube.appendChild(faceDiv);
+    // Build cube via shared factory
+    const { el: item, cubeEl: cube } = createCubeMiniElement(product, {
+      size:  BASE_SIZE,
+      rotX:  rotTiltX,
+      rotY:  rotFixedY,
+      onClick:  (p) => navigateTo('product', p),
+      onEnter:  () => { isHovering = true; },
+      onLeave:  () => { isHovering = false; },
     });
-
-    // Top & bottom faces with logo
-    ['top', 'bottom'].forEach(face => {
-      const faceDiv = document.createElement('div');
-      faceDiv.className = `cube-mini__face cube-mini__face--${face}`;
-      const logo = document.createElement('img');
-      logo.src = '/images/logo.png';
-      logo.alt = 'Tiến Thịnh JSC';
-      faceDiv.appendChild(logo);
-      cube.appendChild(faceDiv);
-    });
-
-    scene.appendChild(cube);
-    item.appendChild(scene);
-
-    // Label
-    const label = document.createElement('span');
-    label.className = 'space-item__label';
-    label.textContent = product.name;
-    item.appendChild(label);
-
-    // --- Drag-to-rotate + click-to-navigate ---
-    let dragStartX = 0, dragStartY = 0;
-    let dragLastRotX = obj.rotTiltX, dragLastRotY = obj.rotFixedY;
-    let isDragging = false, didDrag = false;
-
-    const onDown = (e) => {
-      const point = e.touches ? e.touches[0] : e;
-      dragStartX = point.clientX;
-      dragStartY = point.clientY;
-      dragLastRotX = obj.rotTiltX;
-      dragLastRotY = obj.rotFixedY;
-      isDragging = true;
-      didDrag = false;
-      isHovering = true;
-      item.style.cursor = 'grabbing';
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    const onMove = (e) => {
-      if (!isDragging) return;
-      const point = e.touches ? e.touches[0] : e;
-      const dx = point.clientX - dragStartX;
-      const dy = point.clientY - dragStartY;
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) didDrag = true;
-      obj.rotFixedY = dragLastRotY + dx * 0.6;
-      obj.rotTiltX = Math.max(-75, Math.min(75, dragLastRotX - dy * 0.5));
-      cube.style.transform = `rotateX(${obj.rotTiltX}deg) rotateY(${obj.rotFixedY}deg)`;
-    };
-
-    const onUp = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      isHovering = false;
-      item.style.cursor = 'pointer';
-    };
-
-    item.addEventListener('mousedown', onDown);
-    item.addEventListener('touchstart', onDown, { passive: false });
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onMove, { passive: true });
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchend', onUp);
-
-    // Click only if NOT a drag
-    item.addEventListener('click', (e) => {
-      if (didDrag) { e.preventDefault(); e.stopPropagation(); return; }
-      navigateTo('product', product);
-    });
-    item.addEventListener('mouseenter', () => { isHovering = true; });
-    item.addEventListener('mouseleave', () => { isHovering = false; isDragging = false; item.style.cursor = 'pointer'; });
 
     spaceView.appendChild(item);
-    obj.el = item;
+    obj.el     = item;
     obj.cubeEl = cube;
   });
 
@@ -756,33 +834,61 @@ function createGridView() {
     item.className = 'grid-item';
     item.setAttribute('data-product-id', product.id);
 
+    // Image
     const img = document.createElement('img');
     img.src = product.image;
     img.alt = product.name;
     img.loading = 'lazy';
 
-    // Category tag
-    if (product.category) {
-      const tag = document.createElement('span');
-      tag.className = 'grid-item__tag';
-      tag.textContent = product.category;
-      item.appendChild(tag);
-    }
+    // Category tag (top-left, slides down on hover)
+    const tag = document.createElement('span');
+    tag.className = 'grid-item__tag';
+    tag.textContent = product.category || '';
 
-    // Info overlay (slides up on hover)
+    // Full overlay layer
     const overlay = document.createElement('div');
     overlay.className = 'grid-item__overlay';
+
+    // White info card (centered, scales up on hover)
+    const infoCard = document.createElement('div');
+    infoCard.className = 'grid-item__info';
+
     const overlayName = document.createElement('div');
     overlayName.className = 'grid-item__overlay-name';
     overlayName.textContent = product.name;
+
     const overlaySub = document.createElement('div');
     overlaySub.className = 'grid-item__overlay-sub';
     overlaySub.textContent = [product.subtitle, product.year].filter(Boolean).join(' — ');
-    overlay.appendChild(overlayName);
-    overlay.appendChild(overlaySub);
+
+    infoCard.appendChild(overlayName);
+    infoCard.appendChild(overlaySub);
+    overlay.appendChild(infoCard);
+    // Arrow → is ::after pseudo-element (CSS only)
 
     item.appendChild(img);
+    item.appendChild(tag);
     item.appendChild(overlay);
+
+    // Magnetic tilt effect — enabled after entrance animation
+    let tiltReady = false;
+    item.addEventListener('animationend', () => { tiltReady = true; }, { once: true });
+
+    item.addEventListener('mousemove', (e) => {
+      if (!tiltReady) return;
+      const rect = item.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / (rect.width / 2);
+      const dy = (e.clientY - cy) / (rect.height / 2);
+      const tiltX = dy * -4; // max ±4deg
+      const tiltY = dx * 4;
+      item.style.transform = `perspective(600px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
+    });
+
+    item.addEventListener('mouseleave', () => {
+      item.style.transform = '';
+    });
 
     item.addEventListener('click', () => {
       navigateTo('product', product);
@@ -791,6 +897,7 @@ function createGridView() {
     gridView.appendChild(item);
   });
 }
+
 
 // ============================================
 // HISTORY ROAD — Futuristic Winding Road 3D
@@ -833,11 +940,7 @@ let roadStars        = [];
 let roadPathCache    = [];              // cached road path points
 let roadFlowParticles = [];             // light trails on road
 
-// Ambient sound
-let audioCtx         = null;
-let ambientGain      = null;
-let roadSoundOn      = false;
-let ambientNodes     = [];
+// Ambient sound — removed, now handled by musicPlayer.js
 
 // ============ TIMELINE DATA — TUỲ CHỈNH TẠI ĐÂY ============
 // Mỗi năm có thể có NHIỀU sự kiện. Thêm/sửa/xóa tại đây.
@@ -1784,152 +1887,25 @@ function playCelebrationSound() {
 
 
 
-// ============================================
-// AMBIENT SOUND — Web Audio API Generative
-// ============================================
 
-function initAmbientSound() {
-  if (audioCtx) return;
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  } catch (e) {
-    console.warn('Web Audio API not supported');
-    return;
-  }
 
-  ambientGain = audioCtx.createGain();
-  ambientGain.gain.value = 0;
-  ambientGain.connect(audioCtx.destination);
-
-  // Layer 1: Low drone pad — two detuned oscillators
-  const drone1 = audioCtx.createOscillator();
-  drone1.type = 'sine';
-  drone1.frequency.value = 55; // A1
-
-  const drone2 = audioCtx.createOscillator();
-  drone2.type = 'sine';
-  drone2.frequency.value = 58; // slightly detuned for warmth
-
-  const drone3 = audioCtx.createOscillator();
-  drone3.type = 'sine';
-  drone3.frequency.value = 82.5; // E2 — perfect fifth
-
-  const droneGain = audioCtx.createGain();
-  droneGain.gain.value = 0.06;
-
-  // Slow LFO on drone volume for breathing effect
-  const lfo = audioCtx.createOscillator();
-  lfo.type = 'sine';
-  lfo.frequency.value = 0.08; // very slow ~12s cycle
-  const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 0.015;
-  lfo.connect(lfoGain);
-  lfoGain.connect(droneGain.gain);
-  lfo.start();
-
-  drone1.connect(droneGain);
-  drone2.connect(droneGain);
-  drone3.connect(droneGain);
-  droneGain.connect(ambientGain);
-  drone1.start();
-  drone2.start();
-  drone3.start();
-
-  ambientNodes.push(drone1, drone2, drone3, lfo);
-
-  // Layer 2: Shimmer — filtered white noise
-  const bufferSize = audioCtx.sampleRate * 3;
-  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * 0.4;
-  }
-
-  const noiseSource = audioCtx.createBufferSource();
-  noiseSource.buffer = noiseBuffer;
-  noiseSource.loop = true;
-
-  const bandpass = audioCtx.createBiquadFilter();
-  bandpass.type = 'bandpass';
-  bandpass.frequency.value = 3000;
-  bandpass.Q.value = 0.3;
-
-  const shimmerGain = audioCtx.createGain();
-  shimmerGain.gain.value = 0.008;
-
-  noiseSource.connect(bandpass);
-  bandpass.connect(shimmerGain);
-  shimmerGain.connect(ambientGain);
-  noiseSource.start();
-
-  ambientNodes.push(noiseSource);
-
-  // Layer 3: Occasional chime (scheduled)
-  scheduleChime();
-}
-
-function scheduleChime() {
-  if (!audioCtx || !roadSoundOn) return;
-
-  const chimeFreqs = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
-  const freq = chimeFreqs[Math.floor(Math.random() * chimeFreqs.length)];
-
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-
-  const chimeGain = audioCtx.createGain();
-  const now = audioCtx.currentTime;
-  chimeGain.gain.setValueAtTime(0, now);
-  chimeGain.gain.linearRampToValueAtTime(0.015, now + 0.3);
-  chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 3);
-
-  osc.connect(chimeGain);
-  chimeGain.connect(ambientGain);
-  osc.start(now);
-  osc.stop(now + 3.5);
-
-  // Schedule next chime at random interval (4-10s)
-  const nextDelay = 4000 + Math.random() * 6000;
-  setTimeout(scheduleChime, nextDelay);
-}
-
-function startAmbientSound() {
-  if (!audioCtx) initAmbientSound();
-  if (!audioCtx || !ambientGain) return;
-
-  roadSoundOn = true;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-
-  // Fade in over 3 seconds
-  ambientGain.gain.cancelScheduledValues(audioCtx.currentTime);
-  ambientGain.gain.setValueAtTime(ambientGain.gain.value, audioCtx.currentTime);
-  ambientGain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 3);
-
-  if (roadSoundToggle) roadSoundToggle.classList.remove('muted');
-}
-
-function stopAmbientSound() {
-  if (!audioCtx || !ambientGain) return;
-
-  roadSoundOn = false;
-  // Fade out over 1 second
-  ambientGain.gain.cancelScheduledValues(audioCtx.currentTime);
-  ambientGain.gain.setValueAtTime(ambientGain.gain.value, audioCtx.currentTime);
-  ambientGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
-
-  if (roadSoundToggle) roadSoundToggle.classList.add('muted');
-}
-
+// Wire road sound toggle → music player
 function setupRoadSoundToggle() {
   if (!roadSoundToggle) return;
-  roadSoundToggle.classList.add('muted'); // start muted
+  // Sync initial visual state
+  roadSoundToggle.classList.add('muted');
+
   roadSoundToggle.addEventListener('click', () => {
-    if (roadSoundOn) {
-      stopAmbientSound();
-    } else {
-      startAmbientSound();
-    }
+    toggleMusicPlayer();
+    // Sync button muted class with playback state
+    // Small delay to let audio promise settle
+    setTimeout(() => {
+      if (getMusicPlayState()) {
+        roadSoundToggle.classList.remove('muted');
+      } else {
+        roadSoundToggle.classList.add('muted');
+      }
+    }, 100);
   });
 }
 
@@ -2003,10 +1979,24 @@ function switchView(view) {
   btnGrid.classList.toggle('active', view === 'grid');
   // btnHistory3d removed
 
+  // Update body class for CSS tagline/hint visibility
+  document.body.classList.remove('view-space', 'view-road', 'view-grid');
+  document.body.classList.add(`view-${view}`);
+
   // Update views
   spaceView.classList.toggle('active', view === 'space');
   if (roadView) roadView.classList.toggle('active', view === 'road');
   gridView.classList.toggle('active', view === 'grid');
+
+  // Hide scroll hint when switching away from space
+  const scrollHint = document.getElementById('spaceScrollHint');
+  if (scrollHint) {
+    if (view === 'space') {
+      scrollHint.style.display = '';
+    } else {
+      scrollHint.style.display = 'none';
+    }
+  }
 
   // History 3D removed from homepage — now on standalone page
 
@@ -2015,7 +2005,7 @@ function switchView(view) {
     startAutoFly();
     stopRoadAnimation();
     setHeaderRoadMode(false);
-    stopAmbientSound();
+    // (music continues — controlled by musicPlayer.js floating player)
     document.body.classList.remove('tree-mode');
   } else if (view === 'road') {
     // Road mode
@@ -2030,13 +2020,24 @@ function switchView(view) {
     stopAutoFly();
     stopRoadAnimation();
     setHeaderRoadMode(false);
-    stopAmbientSound();
+    // (music continues — controlled by musicPlayer.js floating player)
     document.body.classList.remove('tree-mode');
     spaceObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadObjects.forEach(obj => { obj.el.style.opacity = '0'; obj.el.style.pointerEvents = 'none'; });
     roadMilestoneEls.forEach(ms => { ms.el.style.opacity = '0'; ms.el.style.pointerEvents = 'none'; });
   }
 }
+
+// Dismiss scroll hint on first user drag/scroll
+(function initScrollHintDismiss() {
+  const dismissHint = () => {
+    const hint = document.getElementById('spaceScrollHint');
+    if (hint) { hint.style.opacity = '0'; hint.style.transition = 'opacity 0.4s ease'; }
+  };
+  window.addEventListener('mousedown', dismissHint, { once: true });
+  window.addEventListener('touchstart', dismissHint, { once: true });
+  window.addEventListener('wheel', dismissHint, { once: true, passive: true });
+})();
 
 // ============================================
 // PRODUCT DETAIL
@@ -5103,6 +5104,8 @@ function hflowOnKeydown(e) {
 
 // Start the app
 document.addEventListener('DOMContentLoaded', () => {
+  // Set initial view class for CSS tagline/hint
+  document.body.classList.add('view-space');
   init();
   initChatbot();
 });

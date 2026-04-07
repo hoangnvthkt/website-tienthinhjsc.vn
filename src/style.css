@@ -8332,14 +8332,25 @@ html[data-theme] .site-footer {
   box-shadow:
     0 0 30px rgba(0,0,0,0.6),
     0 0 20px color-mix(in srgb, var(--accent, #3b82f6) 25%, transparent);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.35s ease,
+              box-shadow 0.35s ease;
 }
 
-/* HOVER on active → even bigger */
-.h3d-imgcard--active:hover {
-  transform: translateX(0) scale(1.25);
+/* HOVER on active (no expand yet) → subtle lift */
+.h3d-imgcard--active:hover:not(.h3d-imgcard--expanded) {
+  transform: translateX(0) scale(1.2);
   box-shadow:
     0 0 50px rgba(0,0,0,0.7),
     0 0 30px color-mix(in srgb, var(--accent, #3b82f6) 35%, transparent);
+}
+
+/* EXPANDED state → card shrinks to make room for project cubes */
+.h3d-imgcard--active.h3d-imgcard--expanded {
+  transform: translateX(0) scale(0.72) translateY(-12px);
+  box-shadow:
+    0 0 20px rgba(0,0,0,0.4),
+    0 0 12px color-mix(in srgb, var(--accent, #3b82f6) 15%, transparent);
 }
 
 /* ── NEAR cards — adjacent, slightly tilted ── */
@@ -8394,17 +8405,279 @@ html[data-theme] .site-footer {
   transform: translateX(calc(var(--diff) * 300%)) scale(0.5);
 }
 
+/* Event count badge on milestone card */
+.h3d-imgcard__count {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  animation: h3dCountPulse 2s ease-in-out infinite;
+}
+@keyframes h3dCountPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/*  DETAIL PANEL — below the card strip                                      */
+/*  PROJECT CARDS ROW — HIDDEN BY DEFAULT, REVEALED ON HOVER/CLICK          */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+.h3d-projects {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 920px;
+  padding: 12px 20px 0;
+  flex-shrink: 0;
+  min-height: 0;
+  pointer-events: none;
+  /* HIDDEN by default */
+  opacity: 0;
+  transform: translateY(-18px) scale(0.92);
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* VISIBLE when expanded */
+.h3d-projects--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* 3D Cube wrapper — replaces flat h3d-projcard */
+.h3d-cube-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  /* Stagger entrance */
+  opacity: 0;
+  transform: translateY(-20px) scale(0.88);
+  transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.h3d-projects--visible .h3d-cube-wrapper {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: var(--delay, 0s);
+}
+/* The space-item inside history is positioned relative (overrides absolute) */
+.h3d-cube-wrapper .space-item--3d {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  will-change: transform;
+  contain: none;
+  flex-shrink: 0;
+  cursor: grab;
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+.h3d-cube-wrapper .space-item--3d:hover {
+  filter: drop-shadow(0 0 18px rgba(59, 130, 246, 0.55));
+  transform: translateY(-4px) scale(1.04) !important;
+}
+
+/* Show label always in history context (space view shows on hover only) */
+.h3d-cube-wrapper .space-item__label {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  font-size: 9px;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: none; /* we use h3d-cube-label instead */
+}
+
+/* Label below each cube */
+.h3d-cube-label {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: clamp(10px, 0.9vw, 13px);
+  font-weight: 600;
+  color: rgba(255,255,255,0.82);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
+  letter-spacing: 0.02em;
+  padding: 2px 4px;
+}
+
+
+
+/* Individual project card */
+.h3d-projcard {
+  flex: 0 1 clamp(160px, 20vw, 260px);
+  border-radius: 14px;
+  overflow: visible;
+  cursor: pointer;
+  background: rgba(8, 16, 36, 0.92);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+  position: relative;
+  /* Stagger entrance */
+  opacity: 0;
+  transform: translateY(-14px) scale(0.94);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.32s ease,
+              border-color 0.28s ease,
+              box-shadow 0.28s ease;
+}
+
+/* Stagger delay: each card appears slightly later */
+.h3d-projects--visible .h3d-projcard {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: var(--delay, 0s);
+}
+
+.h3d-projcard:hover {
+  transform: translateY(-6px) scale(1.05) !important;
+  border-color: var(--accent, #3b82f6);
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.6),
+    0 0 22px color-mix(in srgb, var(--accent, #3b82f6) 30%, transparent);
+}
+
+/* Image area */
+.h3d-projcard__img {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 14px 14px 0 0;
+}
+.h3d-projcard__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.h3d-projcard__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 10%, #0a1428),
+    color-mix(in srgb, var(--accent) 4%, #060d1e));
+}
+
+/* Category tag */
+.h3d-projcard__tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  font-size: 10px;
+  color: var(--accent, #3b82f6);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Info area */
+.h3d-projcard__info {
+  padding: 10px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.h3d-projcard__title {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.h3d-projcard__year {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: var(--accent, #3b82f6);
+  letter-spacing: 0.15em;
+  font-weight: 700;
+}
+
+/* ── REFLECTION EFFECT — mirror shadow beneath each cube ── */
+.h3d-projcard__reflection {
+  position: absolute;
+  bottom: -35%;
+  left: 5%;
+  width: 90%;
+  height: 35%;
+  background: linear-gradient(to bottom,
+    rgba(255,255,255,0.04),
+    transparent 70%);
+  border-radius: 0 0 14px 14px;
+  transform: scaleY(-1);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.12), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.12), transparent);
+  filter: blur(2px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Also use the image itself as a reflection when possible */
+.h3d-projcard::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: 8%;
+  width: 84%;
+  height: 28%;
+  background: inherit;
+  border-radius: 0 0 12px 12px;
+  transform: scaleY(-1);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.08), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.08), transparent);
+  filter: blur(3px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.h3d-projects--visible .h3d-projcard::after {
+  opacity: 1;
+  transition-delay: var(--delay, 0s);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .h3d-projects { gap: 8px; padding: 6px 12px 0; }
+  .h3d-projcard { flex: 0 1 clamp(120px, 30vw, 190px); }
+  .h3d-projcard__reflection { display: none; }
+  .h3d-projcard::after { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  DETAIL PANEL — below project cards                                       */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 .h3d-detail {
   position: relative;
-  width: clamp(320px, 42vw, 560px);
+  width: clamp(340px, 46vw, 600px);
   flex-shrink: 0;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 14px;
 }
 
 /* Connector line from active card to detail panel */

@@ -31,8 +31,11 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 let renderer, scene, camera, starfield, animationId;
 let isInitialized = false;
 let activeIndex = 0;
+let isExpanded = false;     // whether project cards are revealed
 let _milestones = [];
-let _sectionEl, _overlayEl, _progressEl, _detailEl;
+let _allProjects = [];      // all projects from DB (for linking)
+let _onProjectClick = null; // callback from main.js for navigation
+let _sectionEl, _overlayEl, _progressEl, _detailEl, _projectsEl;
 
 // ── Default milestone data ────────────────────────────────────────────────────
 const DEFAULT_MILESTONES = [
@@ -47,7 +50,7 @@ const DEFAULT_MILESTONES = [
   { year: 2025, title: 'Tầm nhìn tương lai',       description: 'Định hướng trở thành nhà thầu hàng đầu Đông Nam Á về kết cấu thép công nghiệp, mở rộng dự án ra thị trường quốc tế.',                stat_value: '200+',    stat_label: 'Dự án mục tiêu',         color: '#8b5cf6', image_url: '', link_url: '' },
 ];
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
+// ── Fetch milestones ──────────────────────────────────────────────────────────
 async function fetchMilestones() {
   try {
     const { data, error } = await db
@@ -58,6 +61,25 @@ async function fetchMilestones() {
     if (error || !data?.length) return DEFAULT_MILESTONES;
     return data;
   } catch { return DEFAULT_MILESTONES; }
+}
+
+// ── Fetch all projects (for linking to milestones) ────────────────────────────
+async function fetchProjects() {
+  try {
+    const { data, error } = await db
+      .from('projects')
+      .select('id, title, slug, category, featured_image, year, subtitle, description')
+      .order('year', { ascending: true });
+    if (error || !data) return [];
+    return data;
+  } catch { return []; }
+}
+
+// ── Get linked projects for a milestone ───────────────────────────────────────
+function getLinkedProjects(ms) {
+  const ids = Array.isArray(ms.project_ids) ? ms.project_ids : [];
+  if (!ids.length) return [];
+  return ids.map(id => _allProjects.find(p => p.id === id)).filter(Boolean);
 }
 
 // SVG icon map (used when no image_url is set)
@@ -122,12 +144,11 @@ function animLoop() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  HTML: IMAGE CARDS ROW (coverflow)
+//  HTML: IMAGE CARDS ROW (coverflow — 1 per milestone for navigation)
 // ══════════════════════════════════════════════════════════════════════════════
 function buildImageCards(milestones, overlayEl) {
   overlayEl.innerHTML = '';
 
-  // Card strip container (enables CSS 3D transforms)
   const strip = document.createElement('div');
   strip.className = 'h3d-strip';
   strip.id = 'h3dStrip';
@@ -138,15 +159,17 @@ function buildImageCards(milestones, overlayEl) {
     card.dataset.index = i;
     card.style.setProperty('--accent', ms.color || '#3b82f6');
 
-    // Image or icon placeholder
+    const linkedProjects = getLinkedProjects(ms);
+    const projectCount = linkedProjects.length;
+
     if (ms.image_url) {
       card.innerHTML = `
         <img class="h3d-imgcard__img" src="${ms.image_url}" alt="${ms.title}" loading="lazy" />
         <div class="h3d-imgcard__overlay">
           <span class="h3d-imgcard__year">${ms.year}</span>
           <span class="h3d-imgcard__label">${ms.title}</span>
+          ${projectCount > 0 ? `<span class="h3d-imgcard__count">▼ ${projectCount} sự kiện</span>` : ''}
         </div>
-        ${ms.link_url ? '<span class="h3d-imgcard__link-hint" title="Xem chi tiết">&#8599;</span>' : ''}
       `;
     } else {
       card.innerHTML = `
@@ -156,30 +179,152 @@ function buildImageCards(milestones, overlayEl) {
         <div class="h3d-imgcard__overlay">
           <span class="h3d-imgcard__year">${ms.year}</span>
           <span class="h3d-imgcard__label">${ms.title}</span>
+          ${projectCount > 0 ? `<span class="h3d-imgcard__count">▼ ${projectCount} sự kiện</span>` : ''}
         </div>
-        ${ms.link_url ? '<span class="h3d-imgcard__link-hint" title="Xem chi tiết">&#8599;</span>' : ''}
       `;
     }
 
-    // Click → if active card AND has link → navigate, else just select
-    card.addEventListener('click', () => {
-      if (i === activeIndex && ms.link_url) {
-        // Internal path (starts with /) → SPA navigation; external → new tab
-        const url = ms.link_url.trim();
-        if (url.startsWith('/') || url.startsWith(window.location.origin)) {
-          window.location.href = url;
-        } else {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        }
+    // Click: if already active → toggle expand; otherwise select this milestone
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (i === activeIndex) {
+        // Toggle expand → show/hide project cards
+        toggleExpand();
       } else {
         setActive(i);
       }
+    });
+
+    // Desktop: hover to expand, leave to collapse
+    card.addEventListener('mouseenter', () => {
+      if (i === activeIndex && !isExpanded) {
+        toggleExpand();
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      // We let the overlay handle collapse, not individual card
     });
 
     strip.appendChild(card);
   });
 
   overlayEl.appendChild(strip);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HTML: PROJECT CARDS ROW (multiple per milestone — above detail panel)
+//  These are the "cubes" the user can assign from featured projects
+// ══════════════════════════════════════════════════════════════════════════════
+function buildProjectCardsArea(overlayEl) {
+  const area = document.createElement('div');
+  area.className = 'h3d-projects';
+  area.id = 'h3dProjects';
+  overlayEl.appendChild(area);
+  _projectsEl = area;
+
+  // Collapse when mouse leaves the project cards area
+  area.addEventListener('mouseleave', () => {
+    if (isExpanded) collapseExpand();
+  });
+}
+
+function updateProjectCards(ms) {
+  if (!_projectsEl) return;
+  _projectsEl.innerHTML = '';
+  _projectsEl.style.setProperty('--accent', ms.color || '#3b82f6');
+
+  const projects = getLinkedProjects(ms);
+  if (!projects.length) return; // nothing to prepare
+
+  _projectsEl.dataset.count = projects.length;
+
+  // Get the shared factory (injected by main.js via window)
+  const cubeFactory = window._createCubeMiniElement;
+
+  projects.forEach((proj, idx) => {
+    // Wrapper for stagger animation
+    const wrapper = document.createElement('div');
+    wrapper.className = 'h3d-cube-wrapper';
+    wrapper.style.setProperty('--delay', `${idx * 0.1}s`);
+
+    // Use real 3D cube if factory ready, else fallback to simple card
+    if (cubeFactory) {
+      const { el } = cubeFactory(proj, {
+        size:  180,
+        rotX:  -18,
+        rotY:  -30 + idx * 20,   // slight offset per cube so they look different
+        onClick: (p) => {
+          if (_onProjectClick) _onProjectClick(p);
+          else if (p.slug) window.location.href = `/du-an/${p.slug}`;
+        },
+      });
+      // Override space-item absolute positioning for flex layout
+      el.style.position    = 'relative';
+      el.style.left        = 'auto';
+      el.style.top         = 'auto';
+      el.style.opacity     = '1';          // base CSS has opacity:0 — must override explicitly
+      el.style.pointerEvents = 'auto';
+      wrapper.appendChild(el);
+    } else {
+      // Fallback flat card
+      wrapper.innerHTML = `
+        <div class="h3d-projcard-fallback">
+          <img src="${proj.featured_image || ''}" alt="${proj.title}" loading="lazy" />
+          <span>${proj.title}</span>
+        </div>`;
+    }
+
+    // Label below cube
+    const label = document.createElement('div');
+    label.className = 'h3d-cube-label';
+    label.textContent = proj.title || '';
+    wrapper.appendChild(label);
+
+    _projectsEl.appendChild(wrapper);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+
+//  TOGGLE EXPAND — show/hide project cubes
+// ══════════════════════════════════════════════════════════════════════════════
+function toggleExpand() {
+  if (isExpanded) {
+    collapseExpand();
+  } else {
+    expandReveal();
+  }
+}
+
+function expandReveal() {
+  const ms = _milestones[activeIndex];
+  const projects = getLinkedProjects(ms);
+  if (!projects.length) return; // nothing to expand
+
+  isExpanded = true;
+
+  // Card shrinks
+  const activeCard = document.querySelector('.h3d-imgcard--active');
+  if (activeCard) activeCard.classList.add('h3d-imgcard--expanded');
+
+  // Project cards reveal
+  if (_projectsEl) {
+    _projectsEl.classList.add('h3d-projects--visible');
+  }
+}
+
+function collapseExpand() {
+  isExpanded = false;
+
+  // Card grows back
+  const activeCard = document.querySelector('.h3d-imgcard--active');
+  if (activeCard) activeCard.classList.remove('h3d-imgcard--expanded');
+
+  // Project cards hide
+  if (_projectsEl) {
+    _projectsEl.classList.remove('h3d-projects--visible');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -230,8 +375,13 @@ function buildProgressDots(milestones, progressEl) {
 // ══════════════════════════════════════════════════════════════════════════════
 function setActive(idx) {
   idx = Math.max(0, Math.min(_milestones.length - 1, idx));
+
+  // Collapse expand when changing milestones
+  if (isExpanded) collapseExpand();
+
   activeIndex = idx;
   updateStrip();
+  updateProjectCards(_milestones[activeIndex]);
   updateDetail();
   updateDots();
 }
@@ -330,9 +480,10 @@ function onResize(canvas) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  PUBLIC: init
 // ══════════════════════════════════════════════════════════════════════════════
-export async function initHistory3D(sectionEl) {
+export async function initHistory3D(sectionEl, options = {}) {
   if (isInitialized) return;
   _sectionEl = sectionEl;
+  _onProjectClick = options.onProjectClick || null;
 
   const canvas     = sectionEl.querySelector('#h3dCanvas');
   const overlayEl  = sectionEl.querySelector('#h3dOverlay');
@@ -342,14 +493,20 @@ export async function initHistory3D(sectionEl) {
   _overlayEl   = overlayEl;
   _progressEl  = progressEl;
 
-  const milestones = await fetchMilestones();
-  _milestones = milestones;
+  // Fetch data
+  const [milestones, projects] = await Promise.all([
+    fetchMilestones(),
+    fetchProjects(),
+  ]);
+  _milestones  = milestones;
+  _allProjects = projects;
 
   // Build Three.js ambient background
   createScene(canvas);
 
   // Build HTML UI
   buildImageCards(milestones, overlayEl);
+  buildProjectCardsArea(overlayEl);   // ← project cards row (between strip & detail)
   buildDetailPanel(overlayEl);
   buildProgressDots(milestones, progressEl);
 
